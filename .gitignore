@@ -3,3 +3,6 @@ A1/actual book/
 
 .DS_Store
 .claude/
+
+# Secrets
+.env

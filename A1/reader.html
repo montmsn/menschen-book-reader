@@ -80,7 +80,20 @@ input[type=color]::-webkit-color-swatch-wrapper{padding:0}input[type=color]::-we
 #ov .ck{position:absolute;transform:translate(-50%,-50%);color:#1c4fd8;font-weight:800;cursor:pointer;user-select:none;line-height:1;z-index:3;
   font-family:"Bradley Hand","Segoe Print","Comic Sans MS",cursive}
 #ov .ck.no{color:#d6336c}
-.mode-text #ov{cursor:text}.mode-check #ov{cursor:cell}
+.mode-text #ov{cursor:text}
+#ov .tx.ok input{border-bottom:2px solid #2f9e44}#ov .tx.bad input{border-bottom:2px solid #e03131}#ov .tx.part input{border-bottom:2px solid #f08c00}
+#ov .tx .st{font:700 .75em system-ui;margin-left:2px;pointer-events:none}#ov .tx.ok .st{color:#2f9e44}#ov .tx.bad .st{color:#e03131}#ov .tx.part .st{color:#f08c00}
+#ov .ck.ok{text-shadow:0 0 6px #2f9e44}#ov .ck.bad{outline:2px solid #e03131;border-radius:4px}
+#chat{flex:1;display:flex;flex-direction:column;gap:8px;padding:10px 14px;overflow:auto}
+.msg{padding:9px 12px;border-radius:16px;max-width:92%;line-height:1.4;font-size:13.5px;white-space:pre-wrap;word-wrap:break-word}
+.msg.u{align-self:flex-end;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 85%,#fff),var(--accent));border-bottom-right-radius:6px}
+.msg.a{align-self:flex-start;background:var(--glass-weak);border:1px solid var(--edge-dim);border-bottom-left-radius:6px}
+.msg.a .res{display:flex;gap:6px;margin:4px 0;align-items:baseline}.msg.a .res b{min-width:1.6em}
+.msg.wait{opacity:.6;animation:fl 1.2s ease infinite}
+.msg.err{border-color:#e03131}
+#aiForm{display:flex;gap:6px;padding:8px 14px 0}
+#aiForm textarea{flex:1;height:44px;resize:none}
+#aiForm button{align-self:flex-end;padding:8px 14px}.mode-check #ov{cursor:cell}
 .textLayer{position:absolute;inset:0;overflow:hidden;line-height:1;z-index:1;--scale-factor:1}
 .textLayer span,.textLayer br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0 0}
 .textLayer ::selection{background:rgba(10,132,255,.3)}
@@ -96,7 +109,8 @@ input[type=color]::-webkit-color-swatch-wrapper{padding:0}input[type=color]::-we
 aside{width:320px;border-radius:24px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 aside h3{margin:14px 14px 6px;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
 .atabs{display:flex;gap:2px;margin:8px;padding:4px;border-radius:999px;background:var(--glass-weak);box-shadow:inset 0 1px 2px rgba(0,0,0,.08)}
-.atabs button{flex:1;padding:7px 2px;font-size:12px;white-space:nowrap}
+.atabs button{flex:1 1 auto;padding:7px 6px;font-size:12px;white-space:nowrap}
+.atabs button span{margin-left:4px}.atabs button:not(.on) span{display:none}.atabs button.on{flex:3 1 auto}
 .atabs button.on{background:var(--glass-strong);color:var(--ink);box-shadow:0 2px 8px -2px rgba(0,0,0,.25),inset 0 1px 0 var(--edge)}
 .tab{display:none;flex:1;overflow:auto;padding-bottom:16px;flex-direction:column}
 .tab.on{display:flex;animation:fade .25s ease}
@@ -170,6 +184,7 @@ aside h3{margin:14px 14px 6px;font-size:11.5px;text-transform:uppercase;letter-s
     <button data-m="erase" title="Element löschen (anklicken)">🧽</button>
     <input type="color" id="col" value="#ffd43b" title="Farbe">
     <button id="undo" title="Rückgängig">↶</button>
+    <button id="checkBtn" title="Antworten auf dieser Seite prüfen (KI)">✅<span class="lbl"> Prüfen</span></button>
   </div>
   <div class="spacer"></div>
   <div class="grp">
@@ -183,7 +198,7 @@ aside h3{margin:14px 14px 6px;font-size:11.5px;text-transform:uppercase;letter-s
 <div class="wrap" id="wrap">
   <div id="view" class="glass"><div id="page"><canvas id="cv"></canvas><div id="tl" class="textLayer"></div><div id="ov"><svg id="ink"></svg></div></div></div>
   <aside>
-    <div class="atabs"><button data-t="path">🧭 Lernpfad</button><button data-t="learn">🎧 Hören</button><button data-t="words">⭐ Wörter</button><button data-t="notes">📝 Notizen</button></div>
+    <div class="atabs"><button data-t="path" title="Lernpfad">🧭<span>Lernpfad</span></button><button data-t="learn" title="Hören">🎧<span>Hören</span></button><button data-t="words" title="Wörter">⭐<span>Wörter</span></button><button data-t="notes" title="Notizen">📝<span>Notizen</span></button><button data-t="ai" title="Tutor">🤖<span>Tutor</span></button></div>
     <div class="tab" id="t-path">
       <div id="pathTop"></div>
       <div id="path"></div>
@@ -212,6 +227,12 @@ aside h3{margin:14px 14px 6px;font-size:11.5px;text-transform:uppercase;letter-s
       <div class="r" style="margin:0 12px"><button id="wQuiz">🃏 Wiederholen</button><span id="wCount" class="muted" style="align-self:center"></span></div>
       <div id="wcard"></div>
       <div id="wlist"></div>
+    </div>
+    <div class="tab" id="t-ai">
+      <div style="margin:6px 14px 0" class="r"><button id="aiCheck" class="on">✅ Diese Seite prüfen</button><button id="aiClear" title="Chat leeren">🧹</button></div>
+      <p class="muted" id="aiInfo" style="margin:8px 14px 0;font-size:12.5px">Schreib deine Antworten mit ⌨️ auf die Seite, dann prüfen lassen. Danach kannst du Fragen zu deinen Fehlern stellen.</p>
+      <div id="chat"></div>
+      <form id="aiForm"><textarea id="aiIn" placeholder="Frag den Tutor… (z. B. Warum ist das falsch?)"></textarea><button class="on" title="Senden">➤</button></form>
     </div>
     <div class="tab" id="t-notes">
     <h3>Notiz zu dieser Seite</h3>
@@ -276,20 +297,20 @@ function draw(){
     e.onclick=ev=>{ev.stopPropagation();if(mode==="erase"){push();d.notes.splice(i,1);commit()}else pop(n)};ov.appendChild(e)});
   const pw=$("page").offsetWidth;
   d.tx.forEach(t=>ov.appendChild(txEl(t,pw)));
-  d.ck.forEach((k,i)=>{const e=document.createElement("div");e.className="ck"+(k.v==="x"?" no":"");e.textContent=k.v==="x"?"✗":"✓";
+  d.ck.forEach((k,i)=>{const e=document.createElement("div");e.className="ck"+(k.v==="x"?" no":"")+(k.st?" "+k.st:"");e.textContent=k.v==="x"?"✗":"✓";
     Object.assign(e.style,{left:k.x*100+"%",top:k.y*100+"%",fontSize:k.s*pw+"px"});
     e.onpointerdown=ev=>ev.stopPropagation();
     e.onclick=ev=>{ev.stopPropagation();if(mode!=="check"&&mode!=="erase")return;push();
-      if(mode==="erase"||k.v==="x")d.ck.splice(i,1);else k.v="x";commit()};ov.appendChild(e)});
+      delete k.st;if(mode==="erase"||k.v==="x")d.ck.splice(i,1);else k.v="x";commit()};ov.appendChild(e)});
 }
 // Typed answer box. Font size is stored relative to page width so it scales with zoom.
 let txSize=.017,lastTx=null;
 function txEl(t,pw){
-  const e=document.createElement("div");e.className="tx";Object.assign(e.style,{left:t.x*100+"%",top:t.y*100+"%"});
+  const e=document.createElement("div");e.className="tx"+(t.st?" "+t.st:"");Object.assign(e.style,{left:t.x*100+"%",top:t.y*100+"%"});
   const hd=document.createElement("span");hd.className="hd";hd.textContent="⠿";hd.title="Verschieben";
   const inp=document.createElement("input");inp.value=t.t;inp.spellcheck=false;inp.autocomplete="off";inp.style.fontSize=t.s*pw+"px";
   const fit=()=>inp.style.width=Math.max(2,[...inp.value].length+1)+"ch";fit();
-  inp.oninput=()=>{t.t=inp.value;fit();save()};
+  inp.oninput=()=>{t.t=inp.value;fit();if(t.st){delete t.st;e.className="tx";st.textContent=""}save()};
   inp.onfocus=()=>{lastTx=t;txSize=t.s};
   inp.onkeydown=ev=>{if(ev.key==="Enter"||ev.key==="Escape"){ev.preventDefault();inp.blur()}};
   inp.onblur=()=>{if(!t.t.trim()){const d=P(),i=d.tx.indexOf(t);if(i>=0){d.tx.splice(i,1);commit()}}};
@@ -299,7 +320,8 @@ function txEl(t,pw){
     const r0=$("ov").getBoundingClientRect(),dx=ev.clientX-(r0.left+t.x*r0.width),dy=ev.clientY-(r0.top+t.y*r0.height);
     hd.onpointermove=m=>{t.x=Math.max(0,Math.min(1,(m.clientX-dx-r0.left)/r0.width));t.y=Math.max(0,Math.min(1,(m.clientY-dy-r0.top)/r0.height));e.style.left=t.x*100+"%";e.style.top=t.y*100+"%"};
     hd.onpointerup=()=>{hd.onpointermove=null;save()}};
-  e.append(hd,inp);return e;
+  const st=document.createElement("span");st.className="st";st.textContent={ok:"✓",bad:"✗",part:"~"}[t.st]||"";
+  e.append(hd,inp,st);return e;
 }
 function resizeTx(f){txSize=Math.max(.008,Math.min(.06,txSize*f));if(lastTx&&P().tx.includes(lastTx)){push();lastTx.s=txSize;save();draw();
   const i=P().tx.indexOf(lastTx);$("ov").querySelectorAll(".tx input")[i]?.focus()}}
@@ -563,6 +585,92 @@ function setTheme(t){if(t)document.documentElement.dataset.theme=t;else delete d
 try{setTheme(localStorage.getItem(KEY+"Theme"))}catch(e){}
 $("theme").onclick=()=>{const dark=document.documentElement.dataset.theme?document.documentElement.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
   const t=dark?"light":"dark";setTheme(t);try{localStorage.setItem(KEY+"Theme",t)}catch(e){}};
+
+// ---------- AI tutor: check answers on the page against the answer key (Gemini via server.py)
+const LANG_NAMES={en:"English",ar:"Arabic",fa:"Persian (Farsi)",tr:"Turkish",uk:"Ukrainian",ru:"Russian",es:"Spanish",fr:"French",ur:"Urdu"};
+let aiOn=false,chat=[],chatKey="";
+fetch("api/status").then(r=>r.json()).then(s=>{aiOn=s.ai;if(!s.ai)$("aiInfo").textContent="KI ist aus: GEMINI_API_KEY fehlt in .env."})
+  .catch(()=>{$("aiInfo").textContent="KI nicht verfügbar – bitte die App mit start.command (server.py) starten."});
+const docs={};
+const getDoc=bi=>docs[bi]??=pdfjsLib.getDocument(encodeURI(BOOKS[bi][1])).promise;
+function lessonOf(bi,p){const R=bi===KB?[KB_PAGES,KB_MOD]:bi===AB?[AB_PAGES,AB_MOD]:null;if(!R)return null;
+  let i=R[0].findIndex(([a,b])=>p>=a&&p<=b);if(i>=0)return{L:i+1,mod:false};
+  i=R[1].findIndex(([a,b])=>p>=a&&p<=b);return i>=0?{L:i*3+3,mod:true}:null}
+async function pageImage(bi,p,w=1300){const d=await getDoc(bi),pg=await d.getPage(p),v0=pg.getViewport({scale:1}),vp=pg.getViewport({scale:w/v0.width});
+  const c=document.createElement("canvas");c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext("2d"),viewport:vp,intent:"print"}).promise;  // "print" renders without requestAnimationFrame, so it also works in background tabs
+
+  const tc=await pg.getTextContent();return{c,text:tc.items.map(i=>i.str).join(" ").replace(/\s+/g," ").slice(0,6000)}}
+// Current page with the learner's answers drawn in and numbered, so the model can refer to them.
+async function answeredImage(){const d=P(),{c}=await pageImage(+$("book").value,page),x=c.getContext("2d"),W=c.width,H=c.height;
+  const items=[];d.tx.forEach(t=>t.t.trim()&&items.push({k:"tx",o:t}));d.ck.forEach(k=>items.push({k:"ck",o:k}));
+  items.forEach((it,n)=>{const o=it.o,fs=Math.max(12,o.s*W),px=o.x*W,py=o.y*H;
+    x.font=`600 ${fs}px "Bradley Hand","Comic Sans MS",cursive`;x.fillStyle="#1c4fd8";x.textBaseline="middle";
+    if(it.k==="tx")x.fillText(o.t,px,py-fs*.25);else{x.textAlign="center";x.fillText(o.v==="x"?"✗":"✓",px,py);x.textAlign="left"}
+    const r=Math.max(8,fs*.45),bx=it.k==="tx"?px-r*1.3:px-fs*.9,by=it.k==="tx"?py-fs*.25:py;
+    x.beginPath();x.arc(bx,by,r,0,7);x.fillStyle="#e03131";x.fill();x.fillStyle="#fff";x.font=`700 ${r*1.3}px system-ui`;x.textAlign="center";x.fillText(n+1,bx,by+1);x.textAlign="left"});
+  return{c,items}}
+// Printed words around each answer (from the PDF text layer), so the model knows which item it belongs to.
+async function pageWords(bi,p){const pg=await (await getDoc(bi)).getPage(p),vp=pg.getViewport({scale:1}),tc=await pg.getTextContent();
+  return tc.items.filter(i=>i.str.trim()).map(i=>{const [x,y]=vp.convertToViewportPoint(i.transform[4],i.transform[5]);
+    return{s:i.str.trim(),x:x/vp.width,y:y/vp.height,w:i.width/vp.width}})}
+function context(words,o,isTick){
+  const line=words.filter(w=>Math.abs(w.y-(o.y+(isTick?.004:0)))<.011&&w.x+w.w>o.x-.33&&w.x<o.x+.2).sort((a,b)=>a.x-b.x);
+  const near=[...line].sort((a,b)=>Math.abs(a.x-o.x)-Math.abs(b.x-o.x))[0];
+  return{line:line.map(w=>w.s).join(" "),near:near?.s||""}}
+const b64=c=>c.toDataURL("image/jpeg",.82).split(",")[1];
+const esc=s=>String(s??"").replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
+const md=s=>esc(s).replace(/^[ \t]*[*-][ \t]+/gm,"• ").replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/(^|\W)\*(?!\s)(.+?)\*(?=\W|$)/g,"$1<i>$2</i>").replace(/`(.+?)`/g,"<code>$1</code>");
+function bubble(cls,html){const m=document.createElement("div");m.className="msg "+cls;m.innerHTML=html;$("chat").appendChild(m);m.scrollIntoView({block:"end"});return m}
+async function gemini(system,contents,json){const r=await fetch("api/gemini",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system,contents,json})});
+  const j=await r.json().catch(()=>({error:"HTTP "+r.status}));if(!r.ok||j.error)throw new Error(j.error||("HTTP "+r.status));return j.text}
+function sysPrompt(){const ln=LANG_NAMES[$("lang").value]||"English";
+  return`You are a patient German teacher for an A1 learner using the textbook "Menschen A1.1".
+The learner writes their own answers onto the book page. You get: (1) the exercise page with the learner's answers in blue handwriting, each marked with a red numbered circle, (2) the list of those answers, (3) answer-key page(s) for this lesson.
+Rules:
+- Compare each numbered answer with the answer key. Use the printed line text given for each answer to find its exercise number and item letter (e.g. "7 d"), then look that item up in the key.
+- A tick ✓ means the learner chose the option it is placed on. Check that exact option against the key.
+- Accept equivalent correct answers (different word order where grammatical, capitalisation of the first word, missing final punctuation). Be strict about spelling, endings and articles.
+- If the key has no answer for that item (free or personal tasks), judge if it is correct German for the task and say so.
+- Explain in ${ln}, simply, for a beginner. Quote German words in **bold**. Keep explanations short (1–2 sentences).
+- Never invent answer-key content. If you cannot find the exercise in the key, say so and use status "unknown".
+In follow-up messages answer the learner's questions in ${ln}, briefly and kindly, with small German examples. Plain text, no JSON.`}
+async function checkPage(){
+  if(!aiOn){tab("ai");return}
+  const bi=+$("book").value,ls=lessonOf(bi,page);tab("ai");
+  if(bi!==KB&&bi!==AB){bubble("a err","Öffne eine Kursbuch- oder Arbeitsbuch-Seite mit Antworten.");return}
+  const d=P();if(!d.tx.some(t=>t.t.trim())&&!d.ck.length){bubble("a err","Auf dieser Seite gibt es noch keine Antworten. Schreib sie mit ⌨️ Schreiben / ☑️ Ankreuzen auf die Seite.");return}
+  if(!ls){bubble("a err","Diese Seite gehört zu keiner Lektion (keine Lösungen vorhanden).");return}
+  chatKey=bookId+"#"+page;chat=[];$("chat").innerHTML="";
+  bubble("u",`✅ Seite ${page} prüfen (Lektion ${ls.L})`);const w=bubble("a wait","Prüfe deine Antworten…");
+  try{
+    const {c,items}=await answeredImage();
+    const kb=bi===KB?KBL:ABL,kp=(bi===KB?KBL_P:ABL_P)[ls.L-1],kd=await getDoc(kb);
+    const keyPages=[kp,kp+1].filter(p=>p<=kd.numPages),keys=await Promise.all(keyPages.map(p=>pageImage(kb,p,1500)));
+    const words=await pageWords(bi,page);
+    const list=items.map((it,n)=>{const c=context(words,it.o,it.k==="ck");
+      return`${n+1}. ${it.k==="tx"?`typed "${it.o.t}"`:`tick ${it.o.v==="x"?"✗ (cross)":"✓"} placed on/next to the option "${c.near}"`} — printed text on that line: "${c.line}" (position x=${Math.round(it.o.x*100)}%, y=${Math.round(it.o.y*100)}%)`}).join("\n");
+    const parts=[{text:`Exercise page: ${BOOKS[bi][0]}, PDF page ${page}, Lektion ${ls.L}${ls.mod?" (module review)":""}.\nLearner's answers:\n${list}\n\nReply as JSON: {"answers":[{"n":1,"item":"exercise and item, e.g. 7d","status":"correct|wrong|partly|unknown","expected":"answer from the key (German)","explanation":"short, in the learner's language"}],"summary":"one or two encouraging sentences in the learner's language"}`},
+      {text:"Exercise page with the learner's answers:"},{inline_data:{mime_type:"image/jpeg",data:b64(c)}}];
+    keys.forEach((k,i)=>parts.push({text:`Answer key (${BOOKS[kb][0]}, page ${keyPages[i]}). OCR text, may contain errors: ${k.text}`},{inline_data:{mime_type:"image/jpeg",data:b64(k.c)}}));
+    chat.push({role:"user",parts});
+    const out=await gemini(sysPrompt(),chat,true);chat.push({role:"model",parts:[{text:out}]});
+    let res;try{res=JSON.parse(out.replace(/^```(json)?|```$/g,""))}catch(e){w.className="msg a";w.innerHTML=md(out);return}
+    const icon={correct:"✅",wrong:"❌",partly:"🟠",unknown:"❔"},cls={correct:"ok",wrong:"bad",partly:"part"};
+    (res.answers||[]).forEach(a=>{const it=items[a.n-1];if(!it)return;if(cls[a.status])it.o.st=cls[a.status];else delete it.o.st});
+    save();draw();
+    const ok=(res.answers||[]).filter(a=>a.status==="correct").length;
+    w.className="msg a";w.innerHTML=`<b>${ok}/${items.length} richtig</b>\n`+(res.answers||[]).map(a=>{const it=items[a.n-1];
+      return`<div class="res"><b>${icon[a.status]||"❔"} ${a.n}</b><span>${a.item?`<small class="muted">${esc(a.item)}:</small> `:""}${it?esc(it.k==="tx"?it.o.t:(it.o.v==="x"?"✗":"✓")):""}${a.status!=="correct"&&a.expected?` → <b>${esc(a.expected)}</b>`:""}${a.status!=="correct"&&a.explanation?`<br><small dir="auto">${md(a.explanation)}</small>`:""}</span></div>`}).join("")+(res.summary?`<div dir="auto" style="margin-top:6px">${md(res.summary)}</div>`:"");
+  }catch(e){w.className="msg a err";w.textContent="Fehler: "+e.message}
+}
+$("checkBtn").onclick=checkPage;$("aiCheck").onclick=checkPage;
+$("aiClear").onclick=()=>{chat=[];$("chat").innerHTML=""};
+$("aiForm").onsubmit=async ev=>{ev.preventDefault();const q=$("aiIn").value.trim();if(!q||!aiOn)return;$("aiIn").value="";
+  if(chatKey!==bookId+"#"+page||!chat.length){chat=[{role:"user",parts:[{text:`I am on ${BOOKS[+$("book").value][0]}, page ${page}. My answers on this page: ${P().tx.map(t=>t.t).filter(Boolean).join(", ")||"none yet"}.`}]},{role:"model",parts:[{text:"OK."}]}];chatKey=bookId+"#"+page}
+  bubble("u",esc(q));const w=bubble("a wait","…");chat.push({role:"user",parts:[{text:q}]});
+  try{const out=await gemini(sysPrompt(),chat,false);chat.push({role:"model",parts:[{text:out}]});w.className="msg a";w.innerHTML=`<div dir="auto">${md(out)}</div>`}
+  catch(e){chat.pop();w.className="msg a err";w.textContent="Fehler: "+e.message}};
+$("aiIn").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("aiForm").requestSubmit()}};
 
 const start=BOOKS.findIndex(b=>b[1]===pref.bookId);$("book").value=start<0?0:start;
 if(pref.scale)scale=pref.scale;

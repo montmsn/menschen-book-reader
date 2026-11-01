@@ -7,7 +7,14 @@ const KEY="menschenUiLang";
 // Whole-string replacements (trimmed text)
 const D={
  // reader toolbar & tabs
- "Notiz":"Note","Schreiben":"Type","Ankreuzen":"Tick","Verschieben":"Move","Schrift kleiner":"Smaller text","Schrift größer":"Larger text",
+ "Notiz":"Note","Lernpfad":"Path","Hören":"Listen","Wörter":"Words","Notizen":"Notes","Tutor":"Tutor","🤖 Tutor":"🤖 Tutor","Prüfen":"Check","✅ Diese Seite prüfen":"✅ Check this page","Chat leeren":"Clear chat","Senden":"Send",
+ "Antworten auf dieser Seite prüfen (KI)":"Check answers on this page (AI)","Frag den Tutor… (z. B. Warum ist das falsch?)":"Ask the tutor… (e.g. Why is this wrong?)",
+ "Schreib deine Antworten mit ⌨️ auf die Seite, dann prüfen lassen. Danach kannst du Fragen zu deinen Fehlern stellen.":"Type your answers on the page with ⌨️, then have them checked. Afterwards you can ask about your mistakes.",
+ "Prüfe deine Antworten…":"Checking your answers…","Öffne eine Kursbuch- oder Arbeitsbuch-Seite mit Antworten.":"Open a Kursbuch or Arbeitsbuch page with answers.",
+ "Auf dieser Seite gibt es noch keine Antworten. Schreib sie mit ⌨️ Schreiben / ☑️ Ankreuzen auf die Seite.":"There are no answers on this page yet. Add them with ⌨️ Type / ☑️ Tick.",
+ "Diese Seite gehört zu keiner Lektion (keine Lösungen vorhanden).":"This page doesn't belong to a lesson (no answer key).",
+ "KI nicht verfügbar – bitte die App mit start.command (server.py) starten.":"AI unavailable – start the app with start.command (server.py).",
+ "KI ist aus: GEMINI_API_KEY fehlt in .env.":"AI is off: GEMINI_API_KEY is missing in .env.","Schreiben":"Type","Ankreuzen":"Tick","Verschieben":"Move","Schrift kleiner":"Smaller text","Schrift größer":"Larger text",
  "Antwort auf die Seite schreiben (klicken)":"Type an answer on the page (click)","Ankreuzen (klicken: ✓ → ✗ → weg)":"Tick (click: ✓ → ✗ → remove)","Markieren":"Highlight","Stift":"Pen","Export":"Export","Import":"Import","Trainer":"Trainer",
  "🧭 Lernpfad":"🧭 Path","🎧 Hören":"🎧 Listen","⭐ Wörter":"⭐ Words","📝 Notizen":"📝 Notes",
  "Audio 🎧":"Audio 🎧","Übersetzer":"Translator","Übersetzen":"Translate","🌐 Übersetzen":"🌐 Translate",
@@ -53,6 +60,9 @@ const R=[
  [/^(.*), S\. ([\d–]+)(?: · (\d+)\/(\d+) Seiten gesehen)?$/,(m,b,p,x,y)=>`${b}, p. ${p}${x?` · ${x}/${y} pages seen`:""}`],
  [/^📍 (.*), S\. (\d+)(.*)$/,(m,b,p,r)=>`📍 ${b}, p. ${p}${r}`],
  [/^\(S\. ([\d–]+)\)$/,(m,a)=>`(p. ${a})`],
+ [/^✅ Seite (\d+) prüfen \(Lektion (\d+)\)$/,(m,a,b)=>`✅ Check page ${a} (Lesson ${b})`],
+ [/^(\d+)\/(\d+) richtig$/,(m,a,b)=>`${a}/${b} correct`],
+ [/^Fehler: (.*)$/,(m,a)=>`Error: ${a}`],
  [/^Seite (\d+)$/,(m,a)=>`Page ${a}`],
  [/^· (\d+) Markierung\(en\)$/,(m,a)=>`· ${a} mark(s)`],
  [/^(\d+) Wörter$/,(m,a)=>`${a} words`],
@@ -74,7 +84,7 @@ function toEn(s){const t=s.trim();if(!t)return s;let o=D[t];
   return o===undefined?s:s.replace(t,o)}
 
 // Containers whose text is book/learning content or user data
-const SKIP="#tl,#page,.dlg,.gram,#trOut,.flash,.opts,#wlist .lab b,#wlist .lab span,#wcard .card,.item div,.lsn>summary,.lesson .t,.lesson .s,textarea,script,style";
+const SKIP="#tl,#page,.dlg,.gram,#trOut,.flash,.opts,#wlist .lab b,#wlist .lab span,#wcard .card,.item div,.msg.a .res span,.msg.a div,.lsn>summary,.lesson .t,.lesson .s,textarea,script,style";
 const SKIP_ATTR="#tl,#page,.dlg";
 let lang="de";try{lang=localStorage.getItem(KEY)||"de"}catch(e){}
 const orig=new WeakMap(),attrOrig=new WeakMap();let busy=false;
