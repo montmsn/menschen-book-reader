@@ -7,6 +7,7 @@ Interactive study companion for **Menschen A1.1**: read your own copy of the boo
 ## Features
 
 - **Reader** – Kursbuch, Arbeitsbuch and both answer keys page by page, with zoom and keyboard navigation
+- **Do the exercises on the page** – ⌨️ type answers straight into the blanks, ☑️ tick boxes (✓ / ✗); saved per page and scaled with zoom
 - **Notes** – pinned notes, highlights, pen drawing and a note for each page, with undo
 - **Audio** – the book's tracks grouped by lesson; follows the Kursbuch lesson you're reading; speed, loop, back 5 s
 - **Translator** – select or double-click a word on the page → translation (Google Translate) and German pronunciation; 9 target languages

@@ -7,7 +7,8 @@ const KEY="menschenUiLang";
 // Whole-string replacements (trimmed text)
 const D={
  // reader toolbar & tabs
- "Notiz":"Note","Markieren":"Highlight","Stift":"Pen","Export":"Export","Import":"Import","Trainer":"Trainer",
+ "Notiz":"Note","Schreiben":"Type","Ankreuzen":"Tick","Verschieben":"Move","Schrift kleiner":"Smaller text","Schrift größer":"Larger text",
+ "Antwort auf die Seite schreiben (klicken)":"Type an answer on the page (click)","Ankreuzen (klicken: ✓ → ✗ → weg)":"Tick (click: ✓ → ✗ → remove)","Markieren":"Highlight","Stift":"Pen","Export":"Export","Import":"Import","Trainer":"Trainer",
  "🧭 Lernpfad":"🧭 Path","🎧 Hören":"🎧 Listen","⭐ Wörter":"⭐ Words","📝 Notizen":"📝 Notes",
  "Audio 🎧":"Audio 🎧","Übersetzer":"Translator","Übersetzen":"Translate","🌐 Übersetzen":"🌐 Translate",
  "⭐ Merken":"⭐ Save","⭐ Gemerkt!":"⭐ Saved!","➕ Notiz":"➕ Note",

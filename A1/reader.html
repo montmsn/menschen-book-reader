@@ -69,7 +69,18 @@ input[type=color]::-webkit-color-swatch-wrapper{padding:0}input[type=color]::-we
   box-shadow:0 30px 60px -20px rgba(20,30,70,.45),0 0 0 1px rgba(255,255,255,.4)}
 #page canvas{display:block;border-radius:6px}
 #ov{position:absolute;inset:0;z-index:2}
-.mode-view #ov{pointer-events:none}.mode-view #ov .note,.mode-view #ov .pop{pointer-events:auto}
+.mode-view #ov{pointer-events:none}.mode-view #ov .note,.mode-view #ov .pop,.mode-view #ov .tx,.mode-view #ov .ck{pointer-events:auto}
+/* answers typed onto the page */
+#ov .tx{position:absolute;display:flex;align-items:center;transform:translateY(-78%);z-index:3}
+#ov .tx input{border:none;border-bottom:1.5px dashed rgba(28,79,216,.35);border-radius:0;background:transparent;box-shadow:none;padding:0 2px;margin:0;
+  color:#1c4fd8;font-family:"Bradley Hand","Segoe Print","Chalkboard SE","Comic Sans MS",cursive;font-weight:600;line-height:1.15;min-width:2ch}
+#ov .tx input:focus{background:rgba(255,248,180,.75);border-bottom-color:#1c4fd8;box-shadow:none}
+#ov .tx .hd{position:absolute;left:-1.1em;opacity:0;cursor:move;color:#1c4fd8;font-size:.8em;user-select:none;touch-action:none}
+#ov .tx:hover .hd,#ov .tx:focus-within .hd{opacity:.7}
+#ov .ck{position:absolute;transform:translate(-50%,-50%);color:#1c4fd8;font-weight:800;cursor:pointer;user-select:none;line-height:1;z-index:3;
+  font-family:"Bradley Hand","Segoe Print","Comic Sans MS",cursive}
+#ov .ck.no{color:#d6336c}
+.mode-text #ov{cursor:text}.mode-check #ov{cursor:cell}
 .textLayer{position:absolute;inset:0;overflow:hidden;line-height:1;z-index:1;--scale-factor:1}
 .textLayer span,.textLayer br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0 0}
 .textLayer ::selection{background:rgba(10,132,255,.3)}
@@ -150,6 +161,9 @@ aside h3{margin:14px 14px 6px;font-size:11.5px;text-transform:uppercase;letter-s
   <div class="grp"><button id="prev" title="Vorherige Seite">‹</button><input type="number" id="pg" min="1" value="1"><span id="tot" class="muted"></span><button id="next" title="Nächste Seite">›</button><button id="zo" title="Verkleinern">−</button><button id="zi" title="Vergrößern">+</button></div>
   <div class="grp">
     <button data-m="view" class="on" title="Ansehen / Text auswählen">✋</button>
+    <button data-m="text" title="Antwort auf die Seite schreiben (klicken)">⌨️<span class="lbl"> Schreiben</span></button>
+    <button data-m="check" title="Ankreuzen (klicken: ✓ → ✗ → weg)">☑️<span class="lbl"> Ankreuzen</span></button>
+    <button id="fsm" title="Schrift kleiner">A−</button><button id="fsp" title="Schrift größer">A+</button>
     <button data-m="note" title="Notiz anheften">📝<span class="lbl"> Notiz</span></button>
     <button data-m="hl" title="Markieren (ziehen)">🖍<span class="lbl"> Markieren</span></button>
     <button data-m="pen" title="Zeichnen">✏️<span class="lbl"> Stift</span></button>
@@ -224,7 +238,7 @@ let pref={};try{pref=JSON.parse(localStorage.getItem(KEY+"Pref"))||{}}catch(e){}
 const savePref=()=>{try{localStorage.setItem(KEY+"Pref",JSON.stringify({bookId,page,scale,pages:pref.pages||{}}))}catch(e){}};
 
 BOOKS.forEach(([n,p],i)=>$("book").add(new Option(n,i)));
-const P=()=>{const b=db[bookId]??={};return b[page]??={notes:[],hl:[],ink:[],memo:""}};
+const P=()=>{const b=db[bookId]??={},p=b[page]??={notes:[],hl:[],ink:[],memo:""};p.tx??=[];p.ck??=[];return p};
 
 async function open(src,id,toPage){
   bookId=id;
@@ -253,14 +267,42 @@ async function render(){
 // Annotations use page-relative 0..1 coordinates so they survive zoom.
 function draw(){
   const ov=$("ov"),d=P();
-  ov.querySelectorAll(".hl,.note,.pop").forEach(e=>e.remove());
+  ov.querySelectorAll(".hl,.note,.pop,.tx,.ck").forEach(e=>e.remove());
   d.hl.forEach((h,i)=>{const e=document.createElement("div");e.className="hl";Object.assign(e.style,{left:h.x*100+"%",top:h.y*100+"%",width:h.w*100+"%",height:h.h*100+"%",background:h.c});e.onclick=ev=>{if(mode==="erase"){ev.stopPropagation();push();d.hl.splice(i,1);commit()}};ov.appendChild(e)});
   $("ink").setAttribute("viewBox","0 0 1000 1000");$("ink").setAttribute("preserveAspectRatio","none");
   $("ink").innerHTML=d.ink.map((s,i)=>`<polyline data-i="${i}" points="${s.p.map(([x,y])=>x*1000+","+y*1000).join(" ")}" fill="none" stroke="${s.c}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:${mode==="erase"?"stroke":"none"};cursor:pointer"/>`).join("");
   $("ink").querySelectorAll("polyline").forEach(l=>l.onclick=ev=>{ev.stopPropagation();push();d.ink.splice(+l.dataset.i,1);commit()});
   d.notes.forEach((n,i)=>{const e=document.createElement("div");e.className="note";e.textContent=i+1;Object.assign(e.style,{left:n.x*100+"%",top:n.y*100+"%",background:n.c});
     e.onclick=ev=>{ev.stopPropagation();if(mode==="erase"){push();d.notes.splice(i,1);commit()}else pop(n)};ov.appendChild(e)});
+  const pw=$("page").offsetWidth;
+  d.tx.forEach(t=>ov.appendChild(txEl(t,pw)));
+  d.ck.forEach((k,i)=>{const e=document.createElement("div");e.className="ck"+(k.v==="x"?" no":"");e.textContent=k.v==="x"?"✗":"✓";
+    Object.assign(e.style,{left:k.x*100+"%",top:k.y*100+"%",fontSize:k.s*pw+"px"});
+    e.onpointerdown=ev=>ev.stopPropagation();
+    e.onclick=ev=>{ev.stopPropagation();if(mode!=="check"&&mode!=="erase")return;push();
+      if(mode==="erase"||k.v==="x")d.ck.splice(i,1);else k.v="x";commit()};ov.appendChild(e)});
 }
+// Typed answer box. Font size is stored relative to page width so it scales with zoom.
+let txSize=.017,lastTx=null;
+function txEl(t,pw){
+  const e=document.createElement("div");e.className="tx";Object.assign(e.style,{left:t.x*100+"%",top:t.y*100+"%"});
+  const hd=document.createElement("span");hd.className="hd";hd.textContent="⠿";hd.title="Verschieben";
+  const inp=document.createElement("input");inp.value=t.t;inp.spellcheck=false;inp.autocomplete="off";inp.style.fontSize=t.s*pw+"px";
+  const fit=()=>inp.style.width=Math.max(2,[...inp.value].length+1)+"ch";fit();
+  inp.oninput=()=>{t.t=inp.value;fit();save()};
+  inp.onfocus=()=>{lastTx=t;txSize=t.s};
+  inp.onkeydown=ev=>{if(ev.key==="Enter"||ev.key==="Escape"){ev.preventDefault();inp.blur()}};
+  inp.onblur=()=>{if(!t.t.trim()){const d=P(),i=d.tx.indexOf(t);if(i>=0){d.tx.splice(i,1);commit()}}};
+  e.onpointerdown=ev=>ev.stopPropagation();
+  e.onclick=ev=>{if(mode==="erase"){ev.stopPropagation();push();P().tx.splice(P().tx.indexOf(t),1);commit()}};
+  hd.onpointerdown=ev=>{ev.preventDefault();ev.stopPropagation();hd.setPointerCapture(ev.pointerId);push();
+    const r0=$("ov").getBoundingClientRect(),dx=ev.clientX-(r0.left+t.x*r0.width),dy=ev.clientY-(r0.top+t.y*r0.height);
+    hd.onpointermove=m=>{t.x=Math.max(0,Math.min(1,(m.clientX-dx-r0.left)/r0.width));t.y=Math.max(0,Math.min(1,(m.clientY-dy-r0.top)/r0.height));e.style.left=t.x*100+"%";e.style.top=t.y*100+"%"};
+    hd.onpointerup=()=>{hd.onpointermove=null;save()}};
+  e.append(hd,inp);return e;
+}
+function resizeTx(f){txSize=Math.max(.008,Math.min(.06,txSize*f));if(lastTx&&P().tx.includes(lastTx)){push();lastTx.s=txSize;save();draw();
+  const i=P().tx.indexOf(lastTx);$("ov").querySelectorAll(".tx input")[i]?.focus()}}
 function pop(n,isNew){
   $("ov").querySelectorAll(".pop").forEach(e=>e.remove());
   const e=document.createElement("div");e.className="pop";
@@ -280,8 +322,11 @@ $("undo").onclick=()=>{const h=history.pop();if(h){db[bookId][page]=JSON.parse(h
 const rel=ev=>{const r=$("ov").getBoundingClientRect();return[Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width)),Math.max(0,Math.min(1,(ev.clientY-r.top)/r.height))]};
 let drag=null;
 $("ov").addEventListener("pointerdown",ev=>{
-  if(mode==="view"||mode==="erase"||ev.target.closest(".note,.pop"))return;
+  if(mode==="view"||mode==="erase"||ev.target.closest(".note,.pop,.tx,.ck"))return;
   const [x,y]=rel(ev),c=$("col").value;
+  if(mode==="text"){ev.preventDefault();push();const t={x,y,t:"",s:txSize};P().tx.push(t);save();draw();
+    const ins=$("ov").querySelectorAll(".tx input");ins[ins.length-1].focus();return}
+  if(mode==="check"){push();P().ck.push({x,y,v:"v",s:txSize*1.4});commit();return}
   if(mode==="note"){push();const n={x,y,t:"",c};P().notes.push(n);save();draw();pop(n,true);return}
   ev.preventDefault();$("ov").setPointerCapture(ev.pointerId);push();
   if(mode==="hl"){drag={x0:x,y0:y,h:{x,y,w:0,h:0,c}};P().hl.push(drag.h)}
@@ -301,11 +346,15 @@ $("ov").addEventListener("click",()=>$("ov").querySelectorAll(".pop").forEach(e=
 document.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{mode=b.dataset.m;document.querySelectorAll("[data-m]").forEach(x=>x.classList.toggle("on",x===b));document.body.className="mode-"+mode;draw()});
 $("memo").oninput=()=>{P().memo=$("memo").value;save();clearTimeout(window._l);window._l=setTimeout(list,400)};
 
+// Keep focus in the new answer box (the click's default action would otherwise blur it)
+$("ov").addEventListener("mousedown",ev=>{if(mode==="text"&&!ev.target.closest(".tx,.pop"))ev.preventDefault()});
+$("fsm").onmousedown=$("fsp").onmousedown=e=>e.preventDefault();
+$("fsm").onclick=()=>resizeTx(1/1.15);$("fsp").onclick=()=>resizeTx(1.15);
 function list(){
   const q=$("q").value.toLowerCase(),b=db[bookId]||{};let h="";
   Object.keys(b).map(Number).sort((a,c)=>a-c).forEach(p=>{const d=b[p];
     const txt=[d.memo,...d.notes.map((n,i)=>`📝${i+1}: ${n.t}`)].filter(t=>t&&t.trim());
-    const marks=d.hl.length+d.ink.length;
+    const marks=d.hl.length+d.ink.length+(d.tx?.length||0)+(d.ck?.length||0);
     if(!txt.length&&!marks)return;
     if(q&&!txt.join(" ").toLowerCase().includes(q))return;
     h+=`<div class="item" data-p="${p}"><b>Seite ${p}</b> ${marks?`<small>· ${marks} Markierung(en)</small>`:""}<div>${txt.map(t=>t.replace(/</g,"&lt;").slice(0,120)).join("<br>")}</div></div>`});
