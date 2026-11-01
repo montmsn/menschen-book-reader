@@ -14,6 +14,7 @@ Interactive study companion for **Menschen A1.1**: read your own copy of the boo
 - **Saved words** – save words with their translation and where they appeared; jump back to that spot; flashcard review
 - **Study path (Lernpfad)** – each lesson step by step: Kursbuch → answers → Arbeitsbuch → answers → trainer; progress saved automatically
 - **Trainer** (`index.html`) – extra vocabulary, quiz, grammar and fill-in-the-blank practice for Lessons 1–12
+- **Interface language** – 🌐 switches menus between German and English (book content stays German)
 
 Everything is saved in your browser; use **Export / Import** to back it up or move it.
 

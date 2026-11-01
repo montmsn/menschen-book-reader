@@ -71,7 +71,7 @@ h2{margin:8px 0 2px}
 <header>
   <h1>🇩🇪 Deutsch A1 Trainer</h1>
   <span class="muted">Begleiter zu Menschen A1.1 · Lektion 1–12</span>
-  <span class="prog" id="prog"></span><a href="reader.html">📖 Reader</a>
+  <span class="prog" id="prog"></span><a href="reader.html">📖 Reader</a><button data-uilang style="padding:4px 12px">🌐 DE</button>
 </header>
 <main id="app"></main>
 <script>
@@ -224,5 +224,6 @@ function luck(l){
 }
 const hm=location.hash.match(/l=(\d+)/);if(hm&&L[+hm[1]])lesson(+hm[1]);else home();
 </script>
+<script src="i18n.js"></script>
 </body>
 </html>

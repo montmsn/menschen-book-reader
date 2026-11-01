@@ -161,7 +161,7 @@ aside h3{margin:14px 14px 6px;font-size:11.5px;text-transform:uppercase;letter-s
   <div class="grp">
     <button id="exp" title="Notizen exportieren">⬇<span class="lbl"> Export</span></button>
     <input type="file" id="imp" accept=".json" hidden><button onclick="imp.click()" title="Notizen importieren">⬆<span class="lbl"> Import</span></button>
-    <button id="theme" title="Hell / Dunkel">◐</button>
+    <button id="theme" title="Hell / Dunkel">◐</button><button data-uilang>🌐 DE</button>
     <a href="index.html" title="Übungstrainer">🎯<span class="lbl"> Trainer</span></a>
     <button id="side" title="Seitenleiste">☰</button>
   </div>
@@ -519,5 +519,6 @@ const start=BOOKS.findIndex(b=>b[1]===pref.bookId);$("book").value=start<0?0:sta
 if(pref.scale)scale=pref.scale;
 $("book").onchange();
 </script>
+<script src="i18n.js"></script>
 </body>
 </html>
