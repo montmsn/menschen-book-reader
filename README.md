@@ -8,13 +8,13 @@ Interactive study companion for **Menschen A1.1**: read your own copy of the boo
 
 - **Reader** – Kursbuch, Arbeitsbuch and both answer keys page by page, with zoom and keyboard navigation
 - **Do the exercises on the page** – ⌨️ type answers straight into the blanks, ☑️ tick boxes (✓ / ✗); saved per page and scaled with zoom
-- **AI tutor** – ✅ Prüfen checks your answers against the answer key (Gemini) and marks them green/red; then chat with the tutor about your mistakes in your own language
+- **AI tutor** – ✅ Prüfen checks your answers against the answer key (Gemini) and marks them green/red; then chat with the tutor about your mistakes in your own language. Results and chats are saved per page, with a history of all checks
 - **Notes** – pinned notes, highlights, pen drawing and a note for each page, with undo
 - **Audio** – the book's tracks grouped by lesson; follows the Kursbuch lesson you're reading; speed, loop, back 5 s
 - **Translator** – select or double-click a word on the page → translation (Google Translate) and German pronunciation; 9 target languages
 - **OCR correction** – fix misread words; the correction is remembered next time
 - **Saved words** – save words with their translation and where they appeared; jump back to that spot; flashcard review
-- **Study path (Lernpfad)** – each lesson step by step: Kursbuch → answers → Arbeitsbuch → answers → trainer; progress saved automatically
+- **Study path (Lernpfad)** – each lesson step by step: Kursbuch → answers → Arbeitsbuch → answers → trainer; progress saved automatically; a page is marked ✅ done when all its answers are correct (or by hand), and exercise steps tick once all their pages are done
 - **Trainer** (`index.html`) – extra vocabulary, quiz, grammar and fill-in-the-blank practice for Lessons 1–12
 - **Interface language** – 🌐 switches menus between German and English (book content stays German)
 
