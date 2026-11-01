@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deutsch A1 Trainer</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1f2328;--muted:#6b6f76;--accent:#d9480f;--ok:#2f9e44;--bad:#e03131;--line:#e6e2d8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#16181c;--card:#20242a;--ink:#eceef1;--muted:#9aa1ab;--accent:#ff8a4c;--ok:#51cf66;--bad:#ff6b6b;--line:#2e333b}}
+:root[data-theme="dark"]{--bg:#16181c;--card:#20242a;--ink:#eceef1;--muted:#9aa1ab;--accent:#ff8a4c;--ok:#51cf66;--bad:#ff6b6b;--line:#2e333b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-size:1.25rem}
+header .prog{margin-left:auto;color:var(--muted);font-size:.9rem}
+main{max-width:900px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.lesson{cursor:pointer;transition:transform .1s}
+.lesson:hover{transform:translateY(-2px);border-color:var(--accent)}
+.lesson .n{color:var(--accent);font-weight:700;font-size:.85rem}
+.lesson .t{font-weight:600}
+.lesson .s{color:var(--muted);font-size:.85rem}
+.lesson .bar{height:4px;background:var(--line);border-radius:2px;margin-top:8px;overflow:hidden}
+.lesson .bar i{display:block;height:100%;background:var(--ok)}
+.mod{margin:24px 0 8px;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.flash{min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;font-size:1.6rem;font-weight:600}
+.flash small{font-size:1rem;color:var(--muted);font-weight:400;margin-top:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.opts{display:grid;gap:8px;margin-top:12px}
+.opts button{text-align:left}
+.opts button.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--card))}
+.opts button.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--card))}
+input[type=text]{font:inherit;width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.fb{margin-top:10px;font-weight:600}
+.fb.ok{color:var(--ok)}.fb.bad{color:var(--bad)}
+.gram h3{margin-top:0}
+table{border-collapse:collapse;width:100%;margin:8px 0}
+td,th{border:1px solid var(--line);padding:6px 8px;text-align:left}
+th{background:color-mix(in srgb,var(--accent) 10%,var(--card))}
+.dlg p{margin:6px 0}.dlg b{color:var(--accent)}
+.speak{border:none;background:none;padding:2px 6px;font-size:1rem}
+.muted{color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🇩🇪 Deutsch A1 Trainer</h1>
+  <span class="muted">Begleiter zu Menschen A1.1 · Lektion 1–12</span>
+  <span class="prog" id="prog"></span>
+</header>
+<main id="app"></main>
+<script>
+// Each lesson: topic, grammar focus, vocab [de, en], a short model dialogue, grammar note (HTML), cloze sentences [sentence with ___, answer].
+const L = [
+ {m:1,t:"Hallo! Ich bin Nicole …",s:"Begrüßen, sich vorstellen, Herkunft, Befinden",g:"W-Fragen, Konjugation ich/du/Sie, sein",
+  v:[["Hallo","hello"],["Guten Morgen","good morning"],["Guten Tag","good day"],["Guten Abend","good evening"],["Gute Nacht","good night"],["Tschüs","bye"],["Auf Wiedersehen","goodbye"],["Wie geht's?","how are you?"],["Es geht.","so-so"],["Woher kommst du?","where are you from?"],["Österreich","Austria"],["die Schweiz","Switzerland"]],
+  d:[["A","Hallo! Ich bin Sara. Wer bist du?"],["B","Ich heiße Jonas. Woher kommst du?"],["A","Aus der Schweiz. Und du?"],["B","Ich komme aus Österreich. Wie geht's?"],["A","Sehr gut, danke!"]],
+  n:"<table><tr><th></th><th>kommen</th><th>heißen</th><th>sein</th></tr><tr><td>ich</td><td>komme</td><td>heiße</td><td>bin</td></tr><tr><td>du</td><td>kommst</td><td>heißt</td><td>bist</td></tr><tr><td>er/sie</td><td>kommt</td><td>heißt</td><td>ist</td></tr><tr><td>Sie</td><td>kommen</td><td>heißen</td><td>sind</td></tr></table><p><b>du</b> + Vorname (Freunde) · <b>Sie</b> + Frau/Herr + Familienname (formell)</p><p>aus Spanien · aus <b>der</b> Schweiz / Türkei · aus <b>dem</b> Iran</p>",
+  c:[["Ich ___ aus Mexiko. (kommen)","komme"],["Wie ___ es Ihnen?","geht"],["Wer ___ du? (sein)","bist"],["Ich komme aus ___ Schweiz.","der"]]},
+ {m:1,t:"Ich bin Journalistin.",s:"Berufe, Wohnort, Zahlen, buchstabieren",g:"Konjugation (wohnen, arbeiten), Ja/Nein-Fragen",
+  v:[["der Beruf","job"],["der Ingenieur / die Ingenieurin","engineer"],["der Lehrer / die Lehrerin","teacher"],["der Student / die Studentin","student"],["der Schauspieler","actor"],["wohnen","to live"],["arbeiten","to work"],["studieren","to study"],["die Adresse","address"],["die Telefonnummer","phone number"],["null, eins, zwei","0, 1, 2"],["zwanzig","twenty"]],
+  d:[["A","Was machen Sie beruflich?"],["B","Ich bin Ingenieurin. Und Sie?"],["A","Ich bin Lehrer. Wohnen Sie in Hamburg?"],["B","Nein, ich wohne in Bremen."]],
+  n:"<table><tr><th></th><th>wohnen</th><th>arbeiten</th></tr><tr><td>ich</td><td>wohne</td><td>arbeite</td></tr><tr><td>du</td><td>wohnst</td><td>arbeit<b>e</b>st</td></tr><tr><td>er/sie</td><td>wohnt</td><td>arbeit<b>e</b>t</td></tr><tr><td>wir</td><td>wohnen</td><td>arbeiten</td></tr><tr><td>ihr</td><td>wohnt</td><td>arbeit<b>e</b>t</td></tr><tr><td>sie/Sie</td><td>wohnen</td><td>arbeiten</td></tr></table><p>W-Frage: <b>Wo</b> wohnst du? · Ja/Nein-Frage: <b>Wohnst</b> du in Köln? – Ja. / Nein.</p><p>Beruf ohne Artikel: Ich bin Lehrerin.</p>",
+  c:[["Er ___ in Berlin. (arbeiten)","arbeitet"],["___ du in Wien? (wohnen)","Wohnst"],["Ihr ___ in Bonn. (wohnen)","wohnt"],["12 = ___","zwölf"]]},
+ {m:1,t:"Das ist meine Mutter.",s:"Familie, Sprachen, Länder",g:"Possessivartikel mein/dein, Konjugation Plural, sprechen",
+  v:[["die Mutter","mother"],["der Vater","father"],["die Eltern","parents"],["die Geschwister","siblings"],["der Bruder","brother"],["die Schwester","sister"],["die Großeltern","grandparents"],["das Kind","child"],["der Mann / die Frau","husband / wife"],["ledig","single"],["verheiratet","married"],["sprechen","to speak"]],
+  d:[["A","Ist das dein Bruder?"],["B","Nein, das ist mein Vater! Und das ist meine Schwester."],["A","Welche Sprachen sprecht ihr?"],["B","Wir sprechen Deutsch und Italienisch."]],
+  n:"<table><tr><th></th><th>der / das</th><th>die / Plural</th></tr><tr><td>ich</td><td>mein</td><td>meine</td></tr><tr><td>du</td><td>dein</td><td>deine</td></tr></table><table><tr><th></th><th>sprechen</th><th>sein</th></tr><tr><td>ich</td><td>spreche</td><td>bin</td></tr><tr><td>du</td><td>spr<b>i</b>chst</td><td>bist</td></tr><tr><td>er/sie</td><td>spr<b>i</b>cht</td><td>ist</td></tr><tr><td>wir</td><td>sprechen</td><td>sind</td></tr><tr><td>ihr</td><td>sprecht</td><td>seid</td></tr><tr><td>sie/Sie</td><td>sprechen</td><td>sind</td></tr></table>",
+  c:[["Das ist ___ Schwester. (my)","meine"],["Ist das ___ Vater? (your)","dein"],["Er ___ Englisch. (sprechen)","spricht"],["Ihr ___ Geschwister. (sein)","seid"]]},
+ {m:2,t:"Der Tisch ist schön!",s:"Möbel, Preise, etwas bewerten",g:"Bestimmter Artikel, Personalpronomen er/es/sie, Adjektiv",
+  v:[["der Tisch","table"],["der Stuhl","chair"],["der Schrank","wardrobe"],["der Sessel","armchair"],["das Bett","bed"],["das Sofa","sofa"],["das Bild","picture"],["die Lampe","lamp"],["schön / hässlich","nice / ugly"],["groß / klein","big / small"],["teuer / billig","expensive / cheap"],["Wie viel kostet…?","how much is…?"]],
+  d:[["A","Schau mal, der Sessel! Wie findest du ihn?"],["B","Er ist toll, aber sehr teuer."],["A","Und die Lampe? Was kostet sie?"],["B","Nur neunzehn Euro. Sie ist billig!"]],
+  n:"<table><tr><th>Artikel</th><th>Pronomen</th></tr><tr><td><b>der</b> Tisch</td><td><b>er</b> ist schön</td></tr><tr><td><b>das</b> Bett</td><td><b>es</b> ist groß</td></tr><tr><td><b>die</b> Lampe</td><td><b>sie</b> ist teuer</td></tr><tr><td><b>die</b> Stühle (Pl.)</td><td><b>sie</b> sind billig</td></tr></table><p>Adjektiv nach sein: Der Tisch ist <b>schön</b>. (keine Endung)</p>",
+  c:[["___ Sofa ist bequem.","Das"],["Der Stuhl? ___ ist hässlich.","Er"],["Die Lampe? ___ kostet 20 Euro.","Sie"],["___ Schrank ist groß.","Der"]]},
+ {m:2,t:"Was ist das? – Das ist ein F.",s:"Gegenstände im Büro / Alltag, Farben",g:"Unbestimmter Artikel, Negativartikel kein, Plural",
+  v:[["der Bleistift","pencil"],["der Kuli","pen"],["das Handy","mobile phone"],["der Schlüssel","key"],["die Brille","glasses"],["die Tasche","bag"],["das Buch","book"],["der Kalender","calendar"],["die Uhr","watch"],["rot / blau / grün","red / blue / green"],["schwarz / weiß","black / white"],["Wie heißt das auf Deutsch?","what's that in German?"]],
+  d:[["A","Was ist das? Ist das ein Kuli?"],["B","Nein, das ist kein Kuli. Das ist ein Bleistift."],["A","Und das? Wie heißt das auf Deutsch?"],["B","Das ist eine Brille."]],
+  n:"<table><tr><th></th><th>bestimmt</th><th>unbestimmt</th><th>negativ</th></tr><tr><td>m</td><td>der</td><td>ein</td><td>kein</td></tr><tr><td>n</td><td>das</td><td>ein</td><td>kein</td></tr><tr><td>f</td><td>die</td><td>eine</td><td>keine</td></tr><tr><td>Pl.</td><td>die</td><td>–</td><td>keine</td></tr></table><p>Plural: Tisch → Tisch<b>e</b>, Lampe → Lampe<b>n</b>, Buch → B<b>ü</b>ch<b>er</b>, Handy → Handy<b>s</b></p>",
+  c:[["Das ist ___ Tasche. (a)","eine"],["Das ist ___ Handy. (not a)","kein"],["Das sind ___ Bücher. (no)","keine"],["eine Lampe – zwei ___","Lampen"]]},
+ {m:2,t:"Ich brauche kein Büro.",s:"Gegenstände bestellen, Bedarf ausdrücken",g:"Akkusativ (bestimmt, unbestimmt, negativ)",
+  v:[["brauchen","to need"],["haben","to have"],["kaufen","to buy"],["bestellen","to order"],["der Computer","computer"],["der Drucker","printer"],["das Büro","office"],["das Formular","form"],["die Rechnung","invoice"],["online","online"],["Ich hätte gern…","I'd like…"],["Ich brauche kein…","I don't need a…"]],
+  d:[["A","Brauchst du einen Drucker?"],["B","Nein, ich habe schon einen Drucker. Aber ich brauche einen Tisch."],["A","Und ein Büro?"],["B","Nein, ich brauche kein Büro. Ich arbeite zu Hause."]],
+  n:"<p>Nur das Maskulinum ändert sich im Akkusativ!</p><table><tr><th></th><th>Nominativ</th><th>Akkusativ</th></tr><tr><td>m</td><td>der / ein / kein</td><td><b>den / einen / keinen</b></td></tr><tr><td>n</td><td>das / ein / kein</td><td>das / ein / kein</td></tr><tr><td>f</td><td>die / eine / keine</td><td>die / eine / keine</td></tr><tr><td>Pl.</td><td>die / – / keine</td><td>die / – / keine</td></tr></table>",
+  c:[["Ich brauche ___ Computer. (a)","einen"],["Er hat ___ Drucker. (no)","keinen"],["Wir kaufen ___ Tisch. (the)","den"],["Ich brauche ___ Büro. (no)","kein"]]},
+ {m:3,t:"Du kannst wirklich toll …!",s:"Hobbys, Komplimente, um etwas bitten",g:"Modalverb können, Verben mit Vokalwechsel, Satzklammer",
+  v:[["kochen","to cook"],["schwimmen","to swim"],["tanzen","to dance"],["singen","to sing"],["fotografieren","to take photos"],["Rad fahren","to cycle"],["Musik hören","to listen to music"],["Freunde treffen","to meet friends"],["im Internet surfen","to surf the internet"],["lesen","to read"],["können","can"],["wirklich toll","really great"]],
+  d:[["A","Wow, du kannst wirklich toll singen!"],["B","Danke! Und was kannst du gut?"],["A","Ich kann gut kochen, aber nicht schwimmen."],["B","Kannst du mir das Rezept geben?"]],
+  n:"<table><tr><th></th><th>können</th><th>fahren</th><th>lesen</th><th>treffen</th></tr><tr><td>ich</td><td>kann</td><td>fahre</td><td>lese</td><td>treffe</td></tr><tr><td>du</td><td>kannst</td><td>f<b>ä</b>hrst</td><td>l<b>ie</b>st</td><td>tr<b>i</b>ffst</td></tr><tr><td>er/sie</td><td>kann</td><td>f<b>ä</b>hrt</td><td>l<b>ie</b>st</td><td>tr<b>i</b>fft</td></tr><tr><td>wir</td><td>können</td><td>fahren</td><td>lesen</td><td>treffen</td></tr></table><p>Satzklammer: Ich <b>kann</b> gut <b>tanzen</b>. (Infinitiv am Ende)</p>",
+  c:[["Er ___ gut kochen. (können)","kann"],["Du ___ gern Rad. (fahren)","fährst"],["Sie ___ ein Buch. (lesen)","liest"],["Ich kann nicht gut ___. (swim)","schwimmen"]]},
+ {m:3,t:"Kein Problem. Ich habe Zeit!",s:"Sich verabreden, Uhrzeit, Tageszeiten, absagen",g:"Uhrzeit, Präpositionen am / um / von … bis",
+  v:[["die Uhrzeit","time"],["Wie spät ist es?","what time is it?"],["halb","half"],["Viertel nach / vor","quarter past / to"],["der Morgen / der Vormittag","morning"],["der Mittag / der Nachmittag","noon / afternoon"],["der Abend / die Nacht","evening / night"],["Zeit haben","to have time"],["leider","unfortunately"],["das Kino","cinema"],["das Schwimmbad","swimming pool"],["das Konzert","concert"]],
+  d:[["A","Hast du am Samstag Zeit? Wir gehen ins Kino."],["B","Kein Problem! Um wie viel Uhr?"],["A","Um Viertel nach acht."],["B","Super, bis Samstag!"]],
+  n:"<p>Wann? <b>am</b> Montag / <b>am</b> Abend · <b>um</b> 8 Uhr · <b>von</b> 9 <b>bis</b> 17 Uhr · aber: <b>in der</b> Nacht</p><p>Inoffiziell: 7:30 = <b>halb acht</b> · 8:15 = Viertel nach acht · 8:45 = Viertel vor neun · 8:10 = zehn nach acht</p><p>Offiziell: 20:15 = zwanzig Uhr fünfzehn</p>",
+  c:[["Der Film beginnt ___ 20 Uhr.","um"],["Hast du ___ Freitag Zeit?","am"],["9:30 = ___ zehn","halb"],["Ich arbeite von 8 ___ 16 Uhr.","bis"]]},
+ {m:3,t:"Ich möchte was essen, Onkel Harry.",s:"Lebensmittel, Frühstück, Speisekarte",g:"möchten, Ja / Nein / Doch, Komposita",
+  v:[["das Brot / das Brötchen","bread / roll"],["der Käse","cheese"],["der Schinken","ham"],["die Wurst","sausage"],["das Ei","egg"],["der Apfel","apple"],["die Orange","orange"],["die Tomate","tomato"],["der Salat","salad"],["die Suppe","soup"],["die Milch","milk"],["möchten","would like"]],
+  d:[["A","Ich möchte etwas essen. Hast du Brot?"],["B","Ja, und Käse. Möchtest du auch Kaffee?"],["A","Nein, danke. Isst du kein Ei?"],["B","Doch, ich esse gern Eier!"]],
+  n:"<table><tr><th></th><th>möchten</th><th>essen</th></tr><tr><td>ich</td><td>möchte</td><td>esse</td></tr><tr><td>du</td><td>möchtest</td><td><b>isst</b></td></tr><tr><td>er/sie</td><td>möchte</td><td><b>isst</b></td></tr><tr><td>wir</td><td>möchten</td><td>essen</td></tr></table><p>Isst du gern Fisch? – <b>Ja</b>. / <b>Nein</b>.<br>Isst du <b>keinen</b> Fisch? – <b>Doch</b> (=ja). / <b>Nein</b>.</p><p>Komposita: der Apfel + <b>der</b> Saft = <b>der</b> Apfelsaft (letztes Wort bestimmt den Artikel)</p>",
+  c:[["___ du einen Tee? (möchten)","Möchtest"],["Trinkst du keinen Kaffee? – ___, gern!","Doch"],["Er ___ gern Salat. (essen)","isst"],["die Tomate + die Suppe = ___ Tomatensuppe","die"]]},
+ {m:4,t:"Ich steige jetzt in die S-Bahn.",s:"Verkehrsmittel, Bahnhof, Reisen",g:"Trennbare Verben, Präpositionen in / nach",
+  v:[["der Bahnhof","station"],["der Bahnsteig","platform"],["der Zug","train"],["die S-Bahn","suburban train"],["die Straßenbahn","tram"],["das Flugzeug","airplane"],["der Koffer","suitcase"],["das Gepäck","luggage"],["die Fahrkarte","ticket"],["einsteigen","to get on"],["aussteigen","to get off"],["ankommen / abfahren","to arrive / depart"]],
+  d:[["A","Hallo! Wo bist du?"],["B","Ich bin am Bahnhof. Ich steige jetzt in die S-Bahn ein."],["A","Wann kommst du an?"],["B","Um zehn nach sechs. Holst du mich ab?"]],
+  n:"<p>Trennbare Verben – Präfix am Satzende:<br>an|kommen → Der Zug <b>kommt</b> um 9 Uhr <b>an</b>.<br>ein|steigen → Ich <b>steige</b> in die S-Bahn <b>ein</b>.</p><p>Frage: Wann <b>fährt</b> der Zug <b>ab</b>?</p><p>Wohin? <b>nach</b> Berlin (Städte, Länder) · <b>in die</b> S-Bahn · <b>in den</b> Zug</p>",
+  c:[["Der Zug kommt um 8 Uhr ___.","an"],["Ich steige in die S-Bahn ___.","ein"],["Wann ___ der Bus ab? (fahren)","fährt"],["Wir fahren ___ Hamburg.","nach"]]},
+ {m:4,t:"Was hast du heute gemacht?",s:"Tagesablauf, über Vergangenes berichten",g:"Perfekt mit haben",
+  v:[["gestern","yesterday"],["heute","today"],["aufstehen","to get up"],["frühstücken","to have breakfast"],["Hausaufgaben machen","to do homework"],["E-Mails schreiben","to write emails"],["fernsehen","to watch TV"],["eine Pause machen","to take a break"],["gemacht","done"],["gearbeitet","worked"],["geschrieben","written"],["gegessen","eaten"]],
+  d:[["A","Was hast du heute gemacht?"],["B","Ich habe viel gearbeitet und E-Mails geschrieben."],["A","Hast du eine Pause gemacht?"],["B","Ja, mittags habe ich Pizza gegessen."]],
+  n:"<p>Perfekt = <b>haben</b> (Position 2) + Partizip II (Ende)</p><table><tr><th>regelmäßig</th><th>unregelmäßig</th></tr><tr><td>machen → <b>ge</b>mach<b>t</b></td><td>schreiben → <b>ge</b>schrieb<b>en</b></td></tr><tr><td>arbeiten → <b>ge</b>arbeit<b>et</b></td><td>essen → <b>ge</b>gess<b>en</b></td></tr><tr><td>ein|kaufen → ein<b>ge</b>kauf<b>t</b></td><td>fern|sehen → fern<b>ge</b>seh<b>en</b></td></tr><tr><td>telefonieren → telefonier<b>t</b> (ohne ge-)</td><td>trinken → <b>ge</b>trunk<b>en</b></td></tr></table>",
+  c:[["Ich ___ Kaffee getrunken.","habe"],["Hast du E-Mails ___? (schreiben)","geschrieben"],["Wir haben ___. (einkaufen)","eingekauft"],["Er hat lange ___. (arbeiten)","gearbeitet"]]},
+ {m:4,t:"Was ist passiert?",s:"Monate, Jahreszeiten, Ereignisse erzählen",g:"Perfekt mit sein, Präpositionen im / am",
+  v:[["der Januar … der Dezember","January … December"],["der Frühling","spring"],["der Sommer","summer"],["der Herbst","autumn"],["der Winter","winter"],["passieren","to happen"],["fahren → gefahren","drive → driven"],["gehen → gegangen","go → gone"],["kommen → gekommen","come → come"],["fliegen → geflogen","fly → flown"],["bleiben → geblieben","stay → stayed"],["schwimmen → geschwommen","swim → swum"]],
+  d:[["A","Was ist passiert? Du bist ja zu spät!"],["B","Mein Bus ist nicht gekommen. Ich bin zu Fuß gegangen."],["A","Oh nein! Und im Sommer bist du nach Spanien geflogen?"],["B","Ja, im August. Ich bin zwei Wochen geblieben."]],
+  n:"<p>Perfekt mit <b>sein</b>: Bewegung von A nach B oder Veränderung — gehen, fahren, kommen, fliegen, laufen, aufstehen, passieren, bleiben.</p><p>Ich <b>bin</b> nach Rom <b>geflogen</b>. · Was <b>ist</b> <b>passiert</b>?</p><p>Wann? <b>im</b> Mai / <b>im</b> Sommer · <b>am</b> Montag · <b>um</b> 8 Uhr</p>",
+  c:[["Ich ___ nach Wien gefahren.","bin"],["Was ist ___? (passieren)","passiert"],["Wir sind ins Kino ___. (gehen)","gegangen"],["Ich habe ___ Juli Geburtstag.","im"]]}
+];
+
+const KEY="a1trainer";
+let st={}; try{st=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
+const app=document.getElementById("app");
+const say=t=>{try{const u=new SpeechSynthesisUtterance(t.split("/")[0]);u.lang="de-DE";u.rate=.9;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}};
+const shuf=a=>a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+const score=i=>Math.min(100,st[i]||0);
+const esc=s=>s.replace(/"/g,"&quot;");
+
+function home(){
+  const tot=Math.round(L.reduce((a,_,i)=>a+score(i),0)/L.length);
+  document.getElementById("prog").textContent=`Fortschritt: ${tot}%`;
+  let h="",mod=0;
+  L.forEach((l,i)=>{
+    if(l.m!==mod){if(mod)h+="</div>";mod=l.m;h+=`<div class="mod">Modul ${mod}</div><div class="grid">`}
+    h+=`<div class="card lesson" onclick="lesson(${i})"><div class="n">Lektion ${i+1}</div><div class="t">${l.t}</div><div class="s">${l.s}</div><div class="bar"><i style="width:${score(i)}%"></i></div></div>`;
+  });
+  app.innerHTML=h+"</div>";
+}
+
+let cur=0;
+function lesson(i,tab="vok"){
+  cur=i;const l=L[i];
+  app.innerHTML=`<button onclick="home()">← Übersicht</button>
+  <h2>Lektion ${i+1}: ${l.t}</h2><p class="muted">${l.s} · Grammatik: ${l.g}</p>
+  <div class="tabs">${[["vok","📇 Wortschatz"],["quiz","✅ Quiz"],["dlg","💬 Dialog"],["gram","📘 Grammatik"],["luck","✍️ Lückentext"]].map(([k,n])=>`<button class="${k===tab?"on":""}" onclick="lesson(${i},'${k}')">${n}</button>`).join("")}</div>
+  <div id="pane"></div>`;
+  ({vok,quiz,dlg,gram,luck})[tab](l);
+}
+
+function vok(l){
+  let k=0,flip=false;const p=document.getElementById("pane");
+  const r=()=>{const [de,en]=l.v[k];
+    p.innerHTML=`<div class="card flash" id="fc">${flip?en:de}<small>${flip?de:"Klicken zum Umdrehen"} · ${k+1}/${l.v.length}</small></div>
+    <div class="row"><button onclick="">◀</button><button class="speak">🔊 Anhören</button><button>▶</button></div>
+    <div class="card" style="margin-top:16px"><table>${l.v.map(([d,e])=>`<tr><td><button class="speak" data-t="${esc(d)}">🔊</button> ${d}</td><td>${e}</td></tr>`).join("")}</table></div>`;
+    p.querySelector("#fc").onclick=()=>{flip=!flip;r()};
+    const b=p.querySelectorAll(".row button");
+    b[0].onclick=()=>{k=(k-1+l.v.length)%l.v.length;flip=false;r()};
+    b[1].onclick=()=>say(de);
+    b[2].onclick=()=>{k=(k+1)%l.v.length;flip=false;r()};
+    p.querySelectorAll("[data-t]").forEach(x=>x.onclick=()=>say(x.dataset.t));
+  };r();
+}
+
+function quiz(l){
+  const p=document.getElementById("pane"),qs=shuf(l.v).slice(0,8);let k=0,ok=0;
+  const r=()=>{
+    if(k===qs.length){const pct=Math.round(ok/qs.length*100);st[cur]=Math.max(score(cur),pct);save();
+      p.innerHTML=`<div class="card"><h3>Ergebnis: ${ok}/${qs.length} (${pct}%)</h3><p>${pct>=80?"Sehr gut! 🎉":"Weiter üben! 💪"}</p><button class="primary" onclick="lesson(${cur},'quiz')">Nochmal</button></div>`;return}
+    const [de,en]=qs[k],rev=Math.random()<.5;
+    const opts=shuf([qs[k],...shuf(l.v.filter(x=>x!==qs[k])).slice(0,3)]);
+    p.innerHTML=`<div class="card"><p class="muted">Frage ${k+1}/${qs.length}</p><h3>${rev?en:de} ${rev?"":`<button class="speak" onclick="say('${esc(de).replace(/'/g,"\\'")}')">🔊</button>`}</h3>
+      <div class="opts">${opts.map((o,j)=>`<button data-j="${j}">${rev?o[0]:o[1]}</button>`).join("")}</div></div>`;
+    p.querySelectorAll(".opts button").forEach(b=>b.onclick=()=>{
+      const right=opts[b.dataset.j]===qs[k];if(right)ok++;
+      p.querySelectorAll(".opts button").forEach(x=>{x.disabled=true;if(opts[x.dataset.j]===qs[k])x.classList.add("ok")});
+      if(!right)b.classList.add("bad");
+      setTimeout(()=>{k++;r()},900);
+    });
+  };r();
+}
+
+function dlg(l){
+  const p=document.getElementById("pane");
+  p.innerHTML=`<div class="card dlg">${l.d.map(([w,t])=>`<p><b>${w}:</b> ${t} <button class="speak" data-t="${esc(t)}">🔊</button></p>`).join("")}
+  <div class="row"><button class="primary" id="all">▶ Ganzen Dialog abspielen</button></div></div>
+  <p class="muted">Tipp: Lies den Dialog laut mit, dann tausche die Rollen.</p>`;
+  p.querySelectorAll("[data-t]").forEach(x=>x.onclick=()=>say(x.dataset.t));
+  p.querySelector("#all").onclick=()=>{try{speechSynthesis.cancel();l.d.forEach(([w,t],i)=>{const u=new SpeechSynthesisUtterance(t);u.lang="de-DE";u.rate=.9;u.pitch=i%2?.8:1.2;speechSynthesis.speak(u)})}catch(e){}};
+}
+
+function gram(l){document.getElementById("pane").innerHTML=`<div class="card gram"><h3>${l.g}</h3>${l.n}</div>`}
+
+function luck(l){
+  const p=document.getElementById("pane");
+  p.innerHTML=l.c.map(([s,a],i)=>`<div class="card" style="margin-bottom:10px"><p>${i+1}. ${s}</p><input type="text" data-i="${i}" placeholder="Antwort…" autocomplete="off"><div class="fb" id="fb${i}"></div></div>`).join("")+`<button class="primary" id="chk">Prüfen</button>`;
+  p.querySelector("#chk").onclick=()=>{
+    p.querySelectorAll("input").forEach(x=>{const a=l.c[x.dataset.i][1],ok=x.value.trim().toLowerCase()===a.toLowerCase(),f=document.getElementById("fb"+x.dataset.i);
+      f.className="fb "+(ok?"ok":"bad");f.textContent=ok?"✓ Richtig!":`✗ Richtig ist: ${a}`});
+  };
+}
+const hm=location.hash.match(/l=(\d+)/);if(hm&&L[+hm[1]])lesson(+hm[1]);else home();
+</script>
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menschen Reader</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{--bg:#eceae4;--panel:#fff;--ink:#1f2328;--muted:#6b6f76;--accent:#d9480f;--line:#dedad0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121417;--panel:#1d2126;--ink:#eceef1;--muted:#9aa1ab;--accent:#ff8a4c;--line:#2e333b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,sans-serif;height:100vh;display:flex;flex-direction:column}
+.bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line)}
+.bar .sep{width:1px;height:24px;background:var(--line);margin:0 4px}
+button,select,input{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:5px 9px}
+button{cursor:pointer}
+button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+input[type=number]{width:60px}
+input[type=color]{padding:0;width:32px;height:30px}
+.wrap{flex:1;display:flex;min-height:0}
+#view{flex:1;overflow:auto;padding:16px;display:flex;justify-content:center}
+#page{position:relative;box-shadow:0 2px 12px rgba(0,0,0,.25);background:#fff;align-self:flex-start}
+#page canvas{display:block}
+#ov{position:absolute;inset:0;z-index:2}
+.mode-view #ov{pointer-events:none}.mode-view #ov .note,.mode-view #ov .pop{pointer-events:auto}
+.textLayer{position:absolute;inset:0;overflow:hidden;line-height:1;z-index:1;--scale-factor:1}
+.textLayer span,.textLayer br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0 0}
+.textLayer ::selection{background:rgba(0,100,255,.3)}
+#tr{margin:0 12px;display:flex;flex-direction:column;gap:6px}
+#tr textarea{height:60px;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;background:var(--bg);color:var(--ink);resize:vertical}
+#trOut{min-height:40px;border:1px dashed var(--line);border-radius:8px;padding:8px;font-size:15px}
+#tr .r{display:flex;gap:6px;flex-wrap:wrap}
+#au{margin:0 12px;display:flex;flex-direction:column;gap:6px}
+#au audio{width:100%}
+#au .r{display:flex;gap:6px}
+#au select{flex:1;min-width:0}
+#trk{display:flex;flex-wrap:wrap;gap:4px;max-height:110px;overflow:auto}
+#trk button{padding:3px 8px;font-size:13px}
+aside{overflow:hidden}
+.atabs{display:flex;border-bottom:1px solid var(--line)}
+.atabs button{flex:1;border:none;border-radius:0;padding:9px 2px;font-size:12.5px;background:none}
+.atabs button.on{background:none;color:var(--accent);box-shadow:inset 0 -2px var(--accent)}
+.tab{display:none;flex:1;overflow:auto;padding-bottom:16px;flex-direction:column}
+.tab.on{display:flex}
+#list{flex:none}
+.lsn{margin:8px 12px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.lsn>summary{padding:8px 10px;cursor:pointer;font-weight:600;display:flex;gap:8px;align-items:center}
+.lsn>summary .pct{margin-left:auto;font-weight:400;color:var(--muted);font-size:12px}
+.lsn.cur{border-color:var(--accent)}
+.step{display:flex;gap:8px;align-items:center;padding:6px 10px;border-top:1px solid var(--line)}
+.step input{width:18px;height:18px;accent-color:var(--ok,#2f9e44)}
+.step .lab{flex:1;line-height:1.25}.step .lab small{display:block;color:var(--muted)}
+.step.done .lab{text-decoration:line-through;opacity:.6}
+.step button{padding:3px 8px;font-size:12px}
+.pbar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:6px 12px}.pbar i{display:block;height:100%;background:#2f9e44}
+#pathTop{padding:10px 12px 0}
+#pathTop .next{width:100%;margin-top:8px;text-align:left;background:var(--accent);color:#fff;border:none;padding:10px}
+.w{display:flex;gap:6px;align-items:center;margin:6px 12px 0;padding:6px 8px;border:1px solid var(--line);border-radius:8px}
+.w .lab{flex:1;cursor:pointer;line-height:1.25}.w small{color:var(--muted);display:block}
+.w button{padding:2px 6px;border:none;background:none}
+#wcard .card{margin:8px 12px;padding:16px;border:1px solid var(--accent);border-radius:10px;text-align:center;cursor:pointer;font-size:18px}
+.flashbox{position:absolute;border:3px solid var(--accent);border-radius:4px;pointer-events:none;animation:fl 1.2s ease 3}
+@keyframes fl{50%{opacity:.15}}
+#selBtn{position:fixed;z-index:20;display:none;background:var(--accent);color:#fff;border:none;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#ov svg{position:absolute;inset:0;width:100%;height:100%}
+.hl{position:absolute;mix-blend-mode:multiply;opacity:.45;border-radius:2px}
+.note{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50% 50% 50% 0;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:#000;font-weight:700;font-size:12px}
+.pop{position:absolute;z-index:5;width:240px;background:#fffbe6;color:#222;border:1px solid #d9c66b;border-radius:8px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.pop textarea{width:100%;height:90px;border:1px solid #e0d38a;border-radius:6px;font:inherit;padding:6px;resize:vertical;background:#fff;color:#222}
+.pop .r{display:flex;justify-content:space-between;margin-top:6px}
+.pop button{background:#fff;color:#222;border-color:#d9c66b}
+aside{width:300px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+aside h3{margin:12px 12px 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+#memo{margin:0 12px;height:140px;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;background:var(--bg);color:var(--ink);resize:vertical}
+#list{flex:1;overflow:auto;padding:0 12px 12px}
+.item{border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:8px;cursor:pointer}
+.item small{color:var(--muted)}
+.mode-note #ov,.mode-hl #ov,.mode-pen #ov{cursor:crosshair}
+.mode-erase #ov{cursor:not-allowed}
+.empty{color:var(--muted);text-align:center;margin:40px}
+@media (max-width:800px){aside{display:none}.wrap.show-side aside{display:flex;position:fixed;right:0;top:0;bottom:0;z-index:10}}
+</style>
+</head>
+<body class="mode-view">
+<div class="bar">
+  <select id="book"></select>
+  <label class="muted" title="Andere PDF öffnen"><input type="file" id="file" accept="application/pdf" hidden><button onclick="file.click()">📂</button></label>
+  <span class="sep"></span>
+  <button id="prev">◀</button><input type="number" id="pg" min="1" value="1"><span id="tot" class="muted"></span><button id="next">▶</button>
+  <span class="sep"></span>
+  <button id="zo">−</button><button id="zi">+</button>
+  <span class="sep"></span>
+  <button data-m="view" class="on" title="Ansehen">✋</button>
+  <button data-m="note" title="Notiz anheften">📝 Notiz</button>
+  <button data-m="hl" title="Markieren (ziehen)">🖍 Markieren</button>
+  <button data-m="pen" title="Zeichnen">✏️ Stift</button>
+  <button data-m="erase" title="Element löschen (anklicken)">🧽</button>
+  <input type="color" id="col" value="#ffd43b" title="Farbe">
+  <span class="sep"></span>
+  <button id="undo" title="Rückgängig">↶</button>
+  <button id="exp" title="Notizen exportieren">⬇ Export</button>
+  <label><input type="file" id="imp" accept=".json" hidden><button onclick="imp.click()" title="Notizen importieren">⬆ Import</button></label>
+  <button id="side" title="Notizen-Panel">☰</button>
+  <a href="index.html" style="margin-left:auto;color:var(--accent)">Übungstrainer →</a>
+</div>
+<div class="wrap" id="wrap">
+  <div id="view"><div id="page"><canvas id="cv"></canvas><div id="tl" class="textLayer"></div><div id="ov"><svg id="ink"></svg></div></div></div>
+  <aside>
+    <div class="atabs"><button data-t="path">🧭 Lernpfad</button><button data-t="learn">🎧 Hören</button><button data-t="words">⭐ Wörter</button><button data-t="notes">📝 Notizen</button></div>
+    <div class="tab" id="t-path">
+      <div id="pathTop"></div>
+      <div id="path"></div>
+    </div>
+    <div class="tab" id="t-learn">
+    <h3>Audio 🎧</h3>
+    <div id="au">
+      <div class="r"><select id="auSrc"><option value="kb">Kursbuch</option><option value="ab">Arbeitsbuch</option></select><select id="auL"></select></div>
+      <div id="trk"></div>
+      <audio id="player" controls preload="none"></audio>
+      <div class="r"><select id="rate"><option value=".75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option></select><button id="rep" title="Wiederholen">🔁</button><button id="back5" title="5 s zurück">⏪ 5s</button></div>
+    </div>
+    <h3>Übersetzer</h3>
+    <div id="tr">
+      <textarea id="trIn" placeholder="Wort/Satz eingeben oder im Buch markieren…"></textarea>
+      <small class="muted" id="fixHint" style="display:none">✏️ Falsch erkannt? Text oben korrigieren und Enter drücken – die Korrektur wird gemerkt.</small>
+      <div class="r"><select id="lang">
+        <option value="en">English</option><option value="ar">العربية</option><option value="fa">فارسی</option><option value="tr">Türkçe</option><option value="uk">Українська</option><option value="ru">Русский</option><option value="es">Español</option><option value="fr">Français</option><option value="ur">اردو</option></select>
+        <button id="trGo" class="on">Übersetzen</button><button id="sayDe" title="Deutsch anhören">🔊 DE</button><button id="sayTr" title="Übersetzung anhören">🔊</button><button id="slow" title="Langsam">🐢</button></div>
+      <div id="trOut" class="muted">—</div>
+      <div class="r"><button id="star" title="Wort für später merken">⭐ Merken</button><button id="trNote" title="Als Seitennotiz speichern">➕ Notiz</button><a id="gLink" target="_blank" rel="noopener" style="color:var(--accent);align-self:center">Google Translate ↗</a></div>
+    </div>
+    </div>
+    <div class="tab" id="t-words">
+      <h3>Meine Wörter <input id="wq" placeholder="Suchen…" style="width:120px;float:right;margin-top:-6px"></h3>
+      <div class="r" style="margin:0 12px"><button id="wQuiz">🃏 Wiederholen</button><span id="wCount" class="muted" style="align-self:center"></span></div>
+      <div id="wcard"></div>
+      <div id="wlist"></div>
+    </div>
+    <div class="tab" id="t-notes">
+    <h3>Notiz zu dieser Seite</h3>
+    <textarea id="memo" placeholder="Wörter, Fragen, Hausaufgaben…"></textarea>
+    <h3>Alle Notizen <input id="q" placeholder="Suchen…" style="width:120px;float:right;margin-top:-6px"></h3>
+    <div id="list"></div>
+    </div>
+  </aside>
+</div>
+<button id="selBtn">🌐 Übersetzen</button>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const BOOKS=[
+ ["Kursbuch A1.1","actual book/Menschen A1.1 Kursbuch OCR neu.pdf"],
+ ["Arbeitsbuch A1.1","actual book/Menschen A1.1 Arbeitsbuch OCR.pdf"],
+ ["Kursbuch Lösungen","actual book/Menschen A1.1 Kursbuch-Loesungen.pdf"],
+ ["Arbeitsbuch Lösungen","actual book/Menschen A1.1 Arbeitsbuch Loesungen.pdf"]];
+const $=id=>document.getElementById(id);
+const KEY="menschenReader";
+let db={};try{db=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert("Speichern fehlgeschlagen – bitte exportieren.")}};
+let pdf=null,bookId="",page=1,scale=1.4,mode="view",history=[];
+let pref={};try{pref=JSON.parse(localStorage.getItem(KEY+"Pref"))||{}}catch(e){}
+const savePref=()=>{try{localStorage.setItem(KEY+"Pref",JSON.stringify({bookId,page,scale,pages:pref.pages||{}}))}catch(e){}};
+
+BOOKS.forEach(([n,p],i)=>$("book").add(new Option(n,i)));
+const P=()=>{const b=db[bookId]??={};return b[page]??={notes:[],hl:[],ink:[],memo:""}};
+
+async function open(src,id,toPage){
+  bookId=id;
+  try{pdf=await pdfjsLib.getDocument(src).promise}
+  catch(e){$("view").innerHTML=`<div class="empty">PDF konnte nicht geladen werden.<br>Bitte die App über den lokalen Server öffnen (http://localhost:8000/reader.html)<br>oder 📂 eine PDF wählen.<br><small>${e.message}</small></div>`;return}
+  $("tot").textContent="/ "+pdf.numPages;$("pg").max=pdf.numPages;
+  page=Math.min(toPage||pref.pages?.[id]||1,pdf.numPages);await render();list();
+}
+let rendering=null;
+async function render(){
+  if(!pdf)return;
+  const pg=await pdf.getPage(page),vp=pg.getViewport({scale}),cv=$("cv"),dpr=window.devicePixelRatio||1;
+  cv.width=vp.width*dpr;cv.height=vp.height*dpr;cv.style.width=vp.width+"px";cv.style.height=vp.height+"px";
+  $("page").style.width=vp.width+"px";$("page").style.height=vp.height+"px";
+  if(rendering)rendering.cancel();
+  rendering=pg.render({canvasContext:cv.getContext("2d"),viewport:vp,transform:[dpr,0,0,dpr,0,0]});
+  rendering.promise.catch(()=>{});
+  // Selectable text layer (from the PDF's OCR text) for translating words on the page
+  const tl=$("tl");tl.innerHTML="";tl.style.setProperty("--scale-factor",scale);
+  pg.getTextContent().then(tc=>pdfjsLib.renderTextLayer({textContentSource:tc,container:tl,viewport:vp}).promise).catch(()=>{});
+  $("pg").value=page;(pref.pages??={})[bookId]=page;savePref();
+  if(typeof seen==="function")seen();
+  if(typeof lastRaw!=="undefined"){lastRaw="";lastSel=null}
+  $("memo").value=P().memo;draw();if(typeof syncLesson==="function")syncLesson();
+}
+// Annotations use page-relative 0..1 coordinates so they survive zoom.
+function draw(){
+  const ov=$("ov"),d=P();
+  ov.querySelectorAll(".hl,.note,.pop").forEach(e=>e.remove());
+  d.hl.forEach((h,i)=>{const e=document.createElement("div");e.className="hl";Object.assign(e.style,{left:h.x*100+"%",top:h.y*100+"%",width:h.w*100+"%",height:h.h*100+"%",background:h.c});e.onclick=ev=>{if(mode==="erase"){ev.stopPropagation();push();d.hl.splice(i,1);commit()}};ov.appendChild(e)});
+  $("ink").setAttribute("viewBox","0 0 1000 1000");$("ink").setAttribute("preserveAspectRatio","none");
+  $("ink").innerHTML=d.ink.map((s,i)=>`<polyline data-i="${i}" points="${s.p.map(([x,y])=>x*1000+","+y*1000).join(" ")}" fill="none" stroke="${s.c}" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:${mode==="erase"?"stroke":"none"};cursor:pointer"/>`).join("");
+  $("ink").querySelectorAll("polyline").forEach(l=>l.onclick=ev=>{ev.stopPropagation();push();d.ink.splice(+l.dataset.i,1);commit()});
+  d.notes.forEach((n,i)=>{const e=document.createElement("div");e.className="note";e.textContent=i+1;Object.assign(e.style,{left:n.x*100+"%",top:n.y*100+"%",background:n.c});
+    e.onclick=ev=>{ev.stopPropagation();if(mode==="erase"){push();d.notes.splice(i,1);commit()}else pop(n)};ov.appendChild(e)});
+}
+function pop(n,isNew){
+  $("ov").querySelectorAll(".pop").forEach(e=>e.remove());
+  const e=document.createElement("div");e.className="pop";
+  e.style.left=Math.min(n.x*100,70)+"%";e.style.top=`calc(${n.y*100}% + 16px)`;
+  e.innerHTML=`<textarea placeholder="Notiz…">${n.t.replace(/</g,"&lt;")}</textarea><div class="r"><button data-a="del">🗑</button><button data-a="ok">✓ Fertig</button></div>`;
+  e.onclick=ev=>ev.stopPropagation();e.onpointerdown=ev=>ev.stopPropagation();
+  const ta=e.querySelector("textarea");
+  e.querySelector('[data-a=ok]').onclick=()=>{n.t=ta.value;if(!n.t.trim()&&isNew)P().notes.splice(P().notes.indexOf(n),1);commit()};
+  e.querySelector('[data-a=del]').onclick=()=>{push();P().notes.splice(P().notes.indexOf(n),1);commit()};
+  $("ov").appendChild(e);ta.focus();
+}
+function push(){history.push(JSON.stringify(P()));if(history.length>50)history.shift()}
+function commit(){save();draw();list()}
+$("undo").onclick=()=>{const h=history.pop();if(h){db[bookId][page]=JSON.parse(h);commit();$("memo").value=P().memo}};
+
+// Pointer handling for note / highlight / pen tools
+const rel=ev=>{const r=$("ov").getBoundingClientRect();return[Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width)),Math.max(0,Math.min(1,(ev.clientY-r.top)/r.height))]};
+let drag=null;
+$("ov").addEventListener("pointerdown",ev=>{
+  if(mode==="view"||mode==="erase"||ev.target.closest(".note,.pop"))return;
+  const [x,y]=rel(ev),c=$("col").value;
+  if(mode==="note"){push();const n={x,y,t:"",c};P().notes.push(n);save();draw();pop(n,true);return}
+  ev.preventDefault();$("ov").setPointerCapture(ev.pointerId);push();
+  if(mode==="hl"){drag={x0:x,y0:y,h:{x,y,w:0,h:0,c}};P().hl.push(drag.h)}
+  if(mode==="pen"){drag={s:{c,p:[[x,y]]}};P().ink.push(drag.s)}
+});
+$("ov").addEventListener("pointermove",ev=>{
+  if(!drag)return;const [x,y]=rel(ev);
+  if(drag.h)Object.assign(drag.h,{x:Math.min(x,drag.x0),y:Math.min(y,drag.y0),w:Math.abs(x-drag.x0),h:Math.abs(y-drag.y0)});
+  if(drag.s)drag.s.p.push([+x.toFixed(4),+y.toFixed(4)]);
+  draw();
+});
+$("ov").addEventListener("pointerup",()=>{if(!drag)return;
+  if(drag.h&&(drag.h.w<.005||drag.h.h<.003))P().hl.pop();
+  drag=null;commit()});
+$("ov").addEventListener("click",()=>$("ov").querySelectorAll(".pop").forEach(e=>e.remove()));
+
+document.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{mode=b.dataset.m;document.querySelectorAll("[data-m]").forEach(x=>x.classList.toggle("on",x===b));document.body.className="mode-"+mode;draw()});
+$("memo").oninput=()=>{P().memo=$("memo").value;save();clearTimeout(window._l);window._l=setTimeout(list,400)};
+
+function list(){
+  const q=$("q").value.toLowerCase(),b=db[bookId]||{};let h="";
+  Object.keys(b).map(Number).sort((a,c)=>a-c).forEach(p=>{const d=b[p];
+    const txt=[d.memo,...d.notes.map((n,i)=>`📝${i+1}: ${n.t}`)].filter(t=>t&&t.trim());
+    const marks=d.hl.length+d.ink.length;
+    if(!txt.length&&!marks)return;
+    if(q&&!txt.join(" ").toLowerCase().includes(q))return;
+    h+=`<div class="item" data-p="${p}"><b>Seite ${p}</b> ${marks?`<small>· ${marks} Markierung(en)</small>`:""}<div>${txt.map(t=>t.replace(/</g,"&lt;").slice(0,120)).join("<br>")}</div></div>`});
+  $("list").innerHTML=h||'<p class="muted">Noch keine Notizen.</p>';
+  $("list").querySelectorAll(".item").forEach(e=>e.onclick=()=>{page=+e.dataset.p;history=[];render()});
+}
+$("q").oninput=list;
+
+const go=p=>{if(!pdf)return;p=Math.max(1,Math.min(pdf.numPages,p));if(p!==page){page=p;history=[];render()}};
+$("prev").onclick=()=>go(page-1);$("next").onclick=()=>go(page+1);$("pg").onchange=()=>go(+$("pg").value);
+$("zi").onclick=()=>{scale=Math.min(4,scale+.2);render()};$("zo").onclick=()=>{scale=Math.max(.5,scale-.2);render()};
+$("side").onclick=()=>$("wrap").classList.toggle("show-side");
+document.addEventListener("keydown",e=>{if(/TEXTAREA|INPUT/.test(e.target.tagName))return;
+  if(e.key==="ArrowRight")go(page+1);if(e.key==="ArrowLeft")go(page-1);
+  if((e.metaKey||e.ctrlKey)&&e.key==="z"){e.preventDefault();$("undo").click()}});
+$("book").onchange=()=>{const [n,p]=BOOKS[$("book").value];history=[];open(encodeURI(p),p)};
+$("file").onchange=async()=>{const f=$("file").files[0];if(!f)return;history=[];open({data:await f.arrayBuffer()},"file:"+f.name)};
+$("exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,1)],{type:"application/json"}));a.download="menschen-notizen.json";a.click()};
+$("imp").onchange=async()=>{const f=$("imp").files[0];if(!f)return;try{const d=JSON.parse(await f.text());for(const b in d){if(Array.isArray(d[b])){db[b]=[...(db[b]||[]),...d[b].filter(x=>!(db[b]||[]).some(y=>y.de===x.de))]}else{db[b]??={};Object.assign(db[b],d[b])}}save();render();list()}catch(e){alert("Ungültige Datei")}};
+
+// Translation via Google Translate's public endpoint; pronunciation via the browser's speech engine.
+let lastTr="";
+// OCR corrections: raw selected text -> what the learner corrected it to; reused on later selections.
+let lastRaw="";
+const FIX=()=>db.__fix??={};
+function fixOcr(raw){raw=raw.trim().replace(/\s+/g," ");lastRaw=raw;$("fixHint").style.display=raw?"block":"none";
+  return FIX()[raw]||raw.split(" ").map(w=>FIX()[w]||w).join(" ")}
+async function translate(t){
+  if(!t){const typed=$("trIn").value.trim().replace(/\s+/g," ");
+    if(lastRaw&&typed&&typed!==lastRaw){FIX()[lastRaw]=typed;save()}  // learner corrected a misread selection
+    else if(!lastRaw)lastSel=null}
+  t=(t||$("trIn").value).trim().replace(/\s+/g," ");if(!t)return;$("trIn").value=t;
+  const tl=$("lang").value;$("trOut").textContent="…";
+  $("gLink").href=`https://translate.google.com/?sl=de&tl=${tl}&text=${encodeURIComponent(t)}&op=translate`;
+  try{const r=await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=de&tl=${tl}&dt=t&dt=bd&q=${encodeURIComponent(t)}`),j=await r.json();
+    lastTr=j[0].map(x=>x[0]).join("");
+    const alt=(j[1]||[]).map(d=>`<small class="muted">${d[0]}: ${d[1].slice(0,5).join(", ")}</small>`).join("<br>");
+    $("trOut").innerHTML=`<div dir="auto"><b>${lastTr.replace(/</g,"&lt;")}</b></div>${alt}`;$("trOut").className="";
+  }catch(e){$("trOut").textContent="Übersetzung nicht erreichbar – Internet prüfen oder Google-Link nutzen.";}
+}
+let slow=false;
+function speak(t,lang){if(!t)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=lang;u.rate=slow?.6:.95;
+  const v=speechSynthesis.getVoices().find(v=>v.lang.replace("_","-").startsWith(lang.slice(0,2)));if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}}
+$("trGo").onclick=()=>translate();
+$("trIn").oninput=()=>{if(!$("trIn").value)lastRaw=""};
+$("trIn").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();translate()}};
+$("lang").onchange=()=>{try{localStorage.setItem(KEY+"Lang",$("lang").value)}catch(e){}if($("trIn").value)translate()};
+try{$("lang").value=localStorage.getItem(KEY+"Lang")||"en"}catch(e){}
+$("sayDe").onclick=()=>speak($("trIn").value,"de-DE");
+$("sayTr").onclick=()=>speak(lastTr,$("lang").value);
+$("slow").onclick=()=>{slow=!slow;$("slow").classList.toggle("on",slow)};
+$("trNote").onclick=()=>{if(!lastTr||!pdf)return;P().memo=(P().memo?P().memo+"\n":"")+`${$("trIn").value} = ${lastTr}`;$("memo").value=P().memo;save();list()};
+// Floating button when text is selected on the page
+document.addEventListener("selectionchange",()=>{const s=getSelection(),b=$("selBtn");
+  if(!s.rangeCount||s.isCollapsed||!$("tl").contains(s.anchorNode)){b.style.display="none";return}
+  const r=s.getRangeAt(0).getBoundingClientRect();b.style.display="block";b.style.left=r.left+"px";b.style.top=Math.max(0,r.top-38)+"px"});
+$("selBtn").onmousedown=e=>e.preventDefault();
+function selRect(){const s=getSelection();if(!s.rangeCount)return null;const a=s.getRangeAt(0).getBoundingClientRect(),b=$("page").getBoundingClientRect();
+  return{x:(a.left-b.left)/b.width,y:(a.top-b.top)/b.height,w:a.width/b.width,h:a.height/b.height}}
+$("selBtn").onclick=()=>{const t=fixOcr(getSelection().toString());lastSel=selRect();$("selBtn").style.display="none";$("wrap").classList.add("show-side");tab("learn");translate(t);speak(t,"de-DE")};
+$("tl").addEventListener("dblclick",()=>setTimeout(()=>{const t=fixOcr(getSelection().toString());if(t){lastSel=selRect();translate(t);speak(t,"de-DE")}},10));
+
+// Book audio: tracks from the extracted CD folders, grouped by lesson.
+// Kursbuch PDF page where each lesson starts (lesson n starts at KB_START[n-1]).
+const KB_START=[2,6,10,18,22,26,34,38,42,50,54,58];
+let TR=null,curTrack=null;
+fetch("audio/tracks.json").then(r=>r.json()).then(j=>{TR=j;fillLessons();syncLesson()}).catch(()=>{$("trk").innerHTML='<span class="muted">Audio nicht gefunden.</span>'});
+function fillLessons(){
+  const ls=[...new Set(TR[$("auSrc").value].map(t=>t.l))];
+  $("auL").innerHTML=ls.map(l=>`<option value="${l}">${l?"Lektion "+l:"Intro"}</option>`).join("");tracks();
+}
+function tracks(){
+  const s=$("auSrc").value,l=+$("auL").value;
+  $("trk").innerHTML=TR[s].filter(t=>t.l===l).map(t=>`<button data-f="${t.f.replace(/"/g,"&quot;")}" class="${curTrack===s+t.f?"on":""}">▶ ${t.n.replace(/^Lektion \d+, /,"")}</button>`).join("");
+  $("trk").querySelectorAll("button").forEach(b=>b.onclick=()=>play(s,b.dataset.f));
+}
+function play(s,f){const p=$("player");curTrack=s+f;p.src=encodeURI(TR.base[s]+f).replace(/#/g,"%23").replace(/,/g,"%2C");
+  p.playbackRate=+$("rate").value;p.play();tracks()}
+function syncLesson(){
+  if(!TR||!bookId.includes("Kursbuch")||bookId.includes("Loesungen"))return;
+  let l=0;KB_START.forEach((s,i)=>{if(page>=s)l=i+1});
+  if(l&&$("auSrc").value==="kb"&&+$("auL").value!==l&&[...$("auL").options].some(o=>+o.value===l)){$("auL").value=l;tracks()}
+  else if(l&&$("auSrc").value!=="kb"){}
+}
+$("auSrc").onchange=fillLessons;$("auL").onchange=tracks;
+$("rate").onchange=()=>$("player").playbackRate=+$("rate").value;
+$("player").onplay=()=>$("player").playbackRate=+$("rate").value;
+$("rep").onclick=()=>{$("player").loop=!$("player").loop;$("rep").classList.toggle("on",$("player").loop)};
+$("back5").onclick=()=>$("player").currentTime=Math.max(0,$("player").currentTime-5);
+
+// ---------- Side tabs
+function tab(t){document.querySelectorAll(".atabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  document.querySelectorAll(".tab").forEach(e=>e.classList.toggle("on",e.id==="t-"+t));
+  try{localStorage.setItem(KEY+"Tab",t)}catch(e){}if(t==="path")renderPath();if(t==="words")words()}
+document.querySelectorAll(".atabs button").forEach(b=>b.onclick=()=>tab(b.dataset.t));
+
+// ---------- Study path: per lesson read Kursbuch → check → Arbeitsbuch → check → practise.
+// Page numbers are PDF pages (as shown in the page box).
+const KB=0,AB=1,KBL=2,ABL=3;
+const KB_PAGES=[[2,5],[6,9],[10,13],[18,21],[22,25],[26,29],[34,37],[38,41],[42,45],[50,53],[54,57],[58,61]];
+const KB_MOD=[[14,17],[30,33],[46,49],[62,65]];
+const AB_PAGES=[[2,7],[8,13],[14,19],[26,31],[32,37],[38,43],[50,54],[55,60],[61,66],[73,78],[79,83],[84,89]];
+const AB_MOD=[[20,25],[44,49],[67,72],[90,95]];
+const KBL_P=[1,1,1,2,3,3,4,4,4,5,5,6],ABL_P=[1,2,3,5,6,7,9,10,11,13,14,15];
+const TITLES=["Hallo! Ich bin Nicole …","Ich bin Journalistin.","Das ist meine Mutter.","Der Tisch ist schön!","Was ist das? – Das ist ein F.","Ich brauche kein Büro.","Du kannst wirklich toll …!","Kein Problem. Ich habe Zeit!","Ich möchte was essen, Onkel Harry.","Ich steige jetzt in die S-Bahn.","Was hast du heute gemacht?","Was ist passiert?"];
+const STEPS=[];
+TITLES.forEach((t,i)=>{const L=i+1,s=[
+  {id:L+"kb",ic:"📖",t:"Kursbuch lesen & Audio hören",b:KB,p:KB_PAGES[i]},
+  {id:L+"kbl",ic:"✅",t:"Kursbuch-Lösungen vergleichen",b:KBL,p:[KBL_P[i],KBL_P[i]]},
+  {id:L+"ab",ic:"✍️",t:"Arbeitsbuch-Übungen machen",b:AB,p:AB_PAGES[i]},
+  {id:L+"abl",ic:"✅",t:"Arbeitsbuch-Lösungen prüfen",b:ABL,p:[ABL_P[i],ABL_P[i]]},
+  {id:L+"tr",ic:"🎯",t:"Im Übungstrainer festigen",link:"index.html#l="+i}];
+  if(L%3===0){const m=L/3-1;s.push({id:L+"mkb",ic:"🧩",t:`Modul ${m+1}: Kursbuch-Extras (Lesemagazin, Film, Landeskunde)`,b:KB,p:KB_MOD[m]},
+    {id:L+"mab",ic:"🔁",t:`Modul ${m+1}: Wiederholung & Selbsteinschätzung`,b:AB,p:AB_MOD[m]})}
+  STEPS.push({L,t,s})});
+const plan=()=>db.__plan??={};
+const seenSet=b=>((db.__seen??={})[b]??=[]);
+function seen(){const s=seenSet(bookId);if(!s.includes(page)){s.push(page);save()}
+  // Auto-complete a reading step once every page in it has been viewed
+  STEPS.forEach(l=>l.s.forEach(st=>{if(st.b===undefined||BOOKS[st.b][1]!==bookId||plan()[st.id])return;
+    const ss=seenSet(bookId);let all=true;for(let p=st.p[0];p<=st.p[1];p++)if(!ss.includes(p))all=false;
+    if(all&&st.p[1]>st.p[0]){plan()[st.id]=Date.now();save()}}));
+  if($("t-path").classList.contains("on"))renderPath()}
+function seenCount(st){if(st.b===undefined)return"";const ss=seenSet(BOOKS[st.b][1]);let n=0;for(let p=st.p[0];p<=st.p[1];p++)if(ss.includes(p))n++;
+  return st.p[1]>st.p[0]?` · ${n}/${st.p[1]-st.p[0]+1} Seiten gesehen`:""}
+function nextStep(){for(const l of STEPS)for(const st of l.s)if(!plan()[st.id])return[l,st];return null}
+function goStep(st){
+  if(st.link){window.open(st.link,"_blank");return}
+  const [n,p]=BOOKS[st.b];
+  // Start where the learner stopped inside this step's page range
+  const ss=seenSet(p);let to=st.p[0];for(let q=st.p[0];q<=st.p[1];q++)if(!ss.includes(q)){to=q;break}
+  jump(st.b,to);
+  if(st.b===KB||st.b===AB){$("auSrc").value=st.b===KB?"kb":"ab";if(TR){fillLessons();const L=parseInt(st.id);if([...$("auL").options].some(o=>+o.value===L)){$("auL").value=L;tracks()}}}
+}
+async function jump(bi,p,rect){
+  const path=BOOKS[bi][1];
+  if(bookId!==path){$("book").value=bi;history=[];await open(encodeURI(path),path,p)}
+  else if(p!==page){page=p;history=[];await render()}
+  if(rect){const f=document.createElement("div");f.className="flashbox";
+    Object.assign(f.style,{left:(rect.x*100-.5)+"%",top:(rect.y*100-.5)+"%",width:(rect.w*100+1)+"%",height:(rect.h*100+1)+"%"});
+    $("ov").appendChild(f);f.scrollIntoView({block:"center",behavior:"smooth"});setTimeout(()=>f.remove(),4000)}
+}
+function renderPath(){
+  const all=STEPS.flatMap(l=>l.s),done=all.filter(s=>plan()[s.id]).length,nx=nextStep();
+  $("pathTop").innerHTML=`<b>Fortschritt: ${Math.round(done/all.length*100)}%</b> <span class="muted">(${done}/${all.length} Schritte)</span>
+    <div class="pbar" style="margin:6px 0"><i style="width:${done/all.length*100}%"></i></div>
+    ${nx?`<button class="next" id="goNext">▶ Weiter: Lektion ${nx[0].L} – ${nx[1].ic} ${nx[1].t}${nx[1].p?` <small>(S. ${nx[1].p[0]}${nx[1].p[1]>nx[1].p[0]?"–"+nx[1].p[1]:""})</small>`:""}</button>`:"<p>🎉 Alle Lektionen fertig!</p>"}`;
+  if(nx)$("goNext").onclick=()=>goStep(nx[1]);
+  const cur=nx?nx[0].L:0;
+  $("path").innerHTML=STEPS.map(l=>{const d=l.s.filter(s=>plan()[s.id]).length;
+    return`<details class="lsn ${l.L===cur?"cur":""}" ${l.L===cur?"open":""}><summary>${d===l.s.length?"✅":"📘"} L${l.L}: ${l.t}<span class="pct">${d}/${l.s.length}</span></summary>
+    ${l.s.map(st=>`<div class="step ${plan()[st.id]?"done":""}"><input type="checkbox" data-id="${st.id}" ${plan()[st.id]?"checked":""}>
+      <div class="lab">${st.ic} ${st.t}<small>${st.b!==undefined?BOOKS[st.b][0]+", S. "+st.p[0]+(st.p[1]>st.p[0]?"–"+st.p[1]:""):"Übungstrainer"}${seenCount(st)}</small></div>
+      <button data-go="${st.id}">Öffnen</button></div>`).join("")}</details>`}).join("");
+  const find=id=>STEPS.flatMap(l=>l.s).find(s=>s.id===id);
+  $("path").querySelectorAll("input[data-id]").forEach(c=>c.onchange=()=>{if(c.checked)plan()[c.dataset.id]=Date.now();else delete plan()[c.dataset.id];save();renderPath()});
+  $("path").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>goStep(find(b.dataset.go)));
+}
+
+// ---------- Saved words: remember word + translation + where it was found
+let lastSel=null,qIdx=-1;
+const W=()=>db.__words??=[];
+$("star").onclick=()=>{const de=$("trIn").value.trim();if(!de||!pdf)return;
+  const ex=W().find(w=>w.de.toLowerCase()===de.toLowerCase());
+  const w={de,tr:lastTr,lang:$("lang").value,bi:+$("book").value,page,rect:lastSel,at:Date.now(),ok:0};
+  if(ex)Object.assign(ex,w);else W().unshift(w);save();
+  $("star").textContent="⭐ Gemerkt!";setTimeout(()=>$("star").textContent="⭐ Merken",1200);words()};
+function words(){
+  const q=$("wq").value.toLowerCase(),ws=W().filter(w=>!q||(w.de+" "+w.tr).toLowerCase().includes(q));
+  $("wCount").textContent=W().length+" Wörter";
+  $("wlist").innerHTML=ws.map(w=>`<div class="w"><div class="lab" data-i="${W().indexOf(w)}"><b>${w.de.replace(/</g,"&lt;")}</b> <span dir="auto">${(w.tr||"").replace(/</g,"&lt;")}</span><small>📍 ${BOOKS[w.bi][0]}, S. ${w.page}${w.ok?" · ✓".repeat(Math.min(w.ok,3)):""}</small></div>
+    <button data-e="${W().indexOf(w)}" title="Bearbeiten">✏️</button><button data-s="${W().indexOf(w)}" title="Anhören">🔊</button><button data-d="${W().indexOf(w)}" title="Löschen">✕</button></div>`).join("")||'<p class="muted" style="margin:12px">Markiere ein Wort im Buch, übersetze es und klicke ⭐ Merken.</p>';
+  $("wlist").querySelectorAll("[data-i]").forEach(e=>e.onclick=()=>{const w=W()[e.dataset.i];jump(w.bi,w.page,w.rect)});
+  $("wlist").querySelectorAll("[data-e]").forEach(e=>e.onclick=()=>editWord(+e.dataset.e,e.closest(".w")));
+  $("wlist").querySelectorAll("[data-s]").forEach(e=>e.onclick=()=>speak(W()[e.dataset.s].de,"de-DE"));
+  $("wlist").querySelectorAll("[data-d]").forEach(e=>e.onclick=()=>{W().splice(+e.dataset.d,1);save();words()});
+}
+$("wq").oninput=words;
+function editWord(i,row){const w=W()[i];
+  row.outerHTML=`<div class="w" id="wedit" style="flex-direction:column;align-items:stretch">
+    <label><small>Deutsch</small><input id="eDe" value="${w.de.replace(/"/g,"&quot;")}" style="width:100%"></label>
+    <label><small>Übersetzung</small><input id="eTr" dir="auto" value="${(w.tr||"").replace(/"/g,"&quot;")}" style="width:100%"></label>
+    <div class="r" style="gap:6px"><button id="eRe">🔄 Neu übersetzen</button><button id="eCancel">Abbrechen</button><button id="eSave" class="on">Speichern</button></div></div>`;
+  $("eRe").onclick=async()=>{$("eTr").value="…";try{const r=await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=de&tl=${w.lang||$("lang").value}&dt=t&q=${encodeURIComponent($("eDe").value)}`),j=await r.json();$("eTr").value=j[0].map(x=>x[0]).join("")}catch(e){$("eTr").value=w.tr}};
+  $("eCancel").onclick=words;
+  $("eSave").onclick=()=>{const de=$("eDe").value.trim();if(!de)return;
+    if(de!==w.de&&!FIX()[w.de])FIX()[w.de]=de;  // remember the correction for future selections
+    w.de=de;w.tr=$("eTr").value.trim();save();words()};
+  $("eDe").focus()}
+// Flashcard review: least-known words first
+$("wQuiz").onclick=()=>{if(!W().length)return;const order=[...W()].sort((a,b)=>a.ok-b.ok||a.at-b.at);
+  let i=0,flip=false;const show=()=>{if(i>=order.length){$("wcard").innerHTML='<p style="margin:12px">🎉 Fertig!</p>';words();return}
+    const w=order[i];$("wcard").innerHTML=`<div class="card">${flip?`<span dir="auto">${w.tr}</span><br><small class="muted">${w.de}</small>`:w.de}<br><small class="muted">${i+1}/${order.length} · klicken zum Umdrehen</small></div>
+    <div class="r" style="margin:0 12px;justify-content:center"><button data-a="no">✗ Noch nicht</button><button data-a="loc">📍</button><button data-a="yes" class="on">✓ Kann ich</button></div>`;
+    if(!flip)speak(w.de,"de-DE");
+    $("wcard").querySelector(".card").onclick=()=>{flip=!flip;show()};
+    $("wcard").querySelector("[data-a=loc]").onclick=()=>jump(w.bi,w.page,w.rect);
+    $("wcard").querySelector("[data-a=yes]").onclick=()=>{w.ok++;save();i++;flip=false;show()};
+    $("wcard").querySelector("[data-a=no]").onclick=()=>{w.ok=0;save();i++;flip=false;show()}};show()};
+
+let t0="path";try{t0=localStorage.getItem(KEY+"Tab")||"path"}catch(e){}
+tab(t0);
+
+const start=BOOKS.findIndex(b=>b[1]===pref.bookId);$("book").value=start<0?0:start;
+if(pref.scale)scale=pref.scale;
+$("book").onchange();
+</script>
+</body>
+</html>
