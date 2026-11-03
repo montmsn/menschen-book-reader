@@ -7,7 +7,7 @@ const KEY="menschenUiLang";
 // Whole-string replacements (trimmed text)
 const D={
  // reader toolbar & tabs
- "Notiz":"Note","Seite als erledigt markieren":"Mark page as done","Noch keine Prüfungen.":"No checks yet.","Lernpfad":"Path","Hören":"Listen","Wörter":"Words","Notizen":"Notes","Tutor":"Tutor","🤖 Tutor":"🤖 Tutor","Prüfen":"Check","✅ Diese Seite prüfen":"✅ Check this page","Chat leeren":"Clear chat","Senden":"Send",
+ "Notiz":"Note","Alles löschen und neu anfangen":"Delete everything and start over","Seite als erledigt markieren":"Mark page as done","Noch keine Prüfungen.":"No checks yet.","Lernpfad":"Path","Hören":"Listen","Wörter":"Words","Notizen":"Notes","Tutor":"Tutor","🤖 Tutor":"🤖 Tutor","Prüfen":"Check","✅ Diese Seite prüfen":"✅ Check this page","Chat leeren":"Clear chat","Senden":"Send",
  "Antworten auf dieser Seite prüfen (KI)":"Check answers on this page (AI)","Frag den Tutor… (z. B. Warum ist das falsch?)":"Ask the tutor… (e.g. Why is this wrong?)",
  "Schreib deine Antworten mit ⌨️ auf die Seite, dann prüfen lassen. Danach kannst du Fragen zu deinen Fehlern stellen.":"Type your answers on the page with ⌨️, then have them checked. Afterwards you can ask about your mistakes.",
  "Prüfe deine Antworten…":"Checking your answers…","Öffne eine Kursbuch- oder Arbeitsbuch-Seite mit Antworten.":"Open a Kursbuch or Arbeitsbuch page with answers.",

@@ -196,6 +196,7 @@ aside h3{margin:14px 14px 6px;font-size:11.5px;text-transform:uppercase;letter-s
   </div>
   <div class="spacer"></div>
   <div class="grp">
+    <button id="reset" title="Alles löschen und neu anfangen">🗑</button>
     <button id="exp" title="Notizen exportieren">⬇<span class="lbl"> Export</span></button>
     <input type="file" id="imp" accept=".json" hidden><button onclick="imp.click()" title="Notizen importieren">⬆<span class="lbl"> Import</span></button>
     <button id="theme" title="Hell / Dunkel">◐</button><button data-uilang>🌐 DE</button>
@@ -404,6 +405,13 @@ document.addEventListener("keydown",e=>{if(/TEXTAREA|INPUT/.test(e.target.tagNam
   if((e.metaKey||e.ctrlKey)&&e.key==="z"){e.preventDefault();$("undo").click()}});
 $("book").onchange=()=>{const [n,p]=BOOKS[$("book").value];history=[];open(encodeURI(p),p)};
 $("file").onchange=async()=>{const f=$("file").files[0];if(!f)return;history=[];open({data:await f.arrayBuffer()},"file:"+f.name)};
+// Start over: optional backup, then remove all saved progress (settings like theme/language stay)
+$("reset").onclick=()=>{
+  const en=window.uiLang?.get()==="en";
+  if(!confirm(en?"Delete ALL saved progress (answers, notes, words, tutor history, study path, trainer scores) and start over?":"ALLE gespeicherten Fortschritte löschen (Antworten, Notizen, Wörter, Tutor-Verlauf, Lernpfad, Trainer-Punkte) und neu anfangen?"))return;
+  if(confirm(en?"Download a backup first? (OK = yes, Cancel = no)":"Vorher eine Sicherung herunterladen? (OK = ja, Abbrechen = nein)"))$("exp").click();
+  setTimeout(()=>{try{["menschenReader","menschenReaderPref","a1trainer"].forEach(k=>localStorage.removeItem(k))}catch(e){}
+    db={};pref={};location.reload()},400)};
 $("exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,1)],{type:"application/json"}));a.download="menschen-notizen.json";a.click()};
 $("imp").onchange=async()=>{const f=$("imp").files[0];if(!f)return;try{const d=JSON.parse(await f.text());for(const b in d){if(Array.isArray(d[b])){db[b]=[...(db[b]||[]),...d[b].filter(x=>!(db[b]||[]).some(y=>y.de===x.de))]}else{db[b]??={};Object.assign(db[b],d[b])}}save();render();list()}catch(e){alert("Ungültige Datei")}};
 
